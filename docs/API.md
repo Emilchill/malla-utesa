@@ -37,7 +37,7 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 | `POST /api/chat/report` | `{ id, reason }`. Solo de salas a las que perteneces. |
 | `GET /api/chat/reports` | Moderador: mensajes reportados. |
 | `POST /api/chat/block` | `{ pid, on }`. Bloquear quita la amistad. |
-| `POST /api/chat/wipe` | `{ room: general\|carrera\|all }`. Moderador: vacía una sala pública; `all` solo el dueño. Cambia `chat_epoch` (los clientes se reinician). Los privados no se tocan. |
+| `POST /api/chat/wipe` | `{ room: general\|carrera\|all }`. Moderador: vacía una sala pública; `all` (solo el dueño) vacía únicamente General y las salas de carrera. Cambia `chat_epoch` (los clientes se reinician). Los chats privados y los de grupo no se tocan. |
 | `POST /api/dm/read` | `{ pid }`. Marca un chat privado como leído. |
 
 ## Personas, amigos y grupos

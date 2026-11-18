@@ -201,8 +201,18 @@ r = await call("GET", "/api/chat?room=general", tok("ana"));
 ok("General queda vacío y cambia el epoch", r[1].messages.length === 0 && r[1].epoch !== ep1, r[1]);
 r = await call("GET", `/api/chat?room=dm:${pid.bob}`, tok("ana"));
 ok("los privados no se tocan (sala sigue válida si hay amistad)", r[0] === 200 || r[0] === 400, r[0]);
-r = await call("POST", "/api/chat/wipe", bossTok(), { room: "all" });
-ok("el dueño vacía todo", r[0] === 200, r);
+{ // "vaciar todo" borra solo las salas públicas: los privados y los grupos sobreviven
+  const ins = sq.prepare("INSERT INTO messages (room, uid, text, created_at) VALUES (?, 'ana', ?, ?)");
+  const t0 = Date.now();
+  for (const room of ["general", "c:ISC", "c:DER", "g:99991", `dm:${pid.ana}:${pid.bob}`]) ins.run(room, "para el wipe total", t0);
+  const left = (room) => sq.prepare("SELECT COUNT(*) AS n FROM messages WHERE room = ?").get(room).n;
+  const dmRoom0 = `dm:${pid.ana}:${pid.bob}`, dmBefore = left(dmRoom0);
+  r = await call("POST", "/api/chat/wipe", bossTok(), { room: "all" });
+  ok("el dueño vacía todo", r[0] === 200, r);
+  ok("vaciar todo borra General y las salas de carrera", left("general") === 0 && left("c:ISC") === 0 && left("c:DER") === 0, { g: left("general"), isc: left("c:ISC"), der: left("c:DER") });
+  ok("vaciar todo NO borra los mensajes de grupos ni los privados", left("g:99991") === 1 && dmBefore >= 1 && left(dmRoom0) === dmBefore, { grupo: left("g:99991"), dmAntes: dmBefore, dmDespues: left(dmRoom0) });
+  sq.prepare("DELETE FROM messages WHERE room = 'g:99991' OR (room = ? AND text = 'para el wipe total')").run(dmRoom0);
+}
 r = await call("POST", "/api/chat/wipe", bossTok(), { room: "xx" });
 ok("sala inválida -> 400", r[0] === 400, r);
 

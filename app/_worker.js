@@ -765,7 +765,8 @@ async function chatApi(request, env, sub) {
     try { body = JSON.parse(await request.text()); } catch { return fail(400, "entrada", "Datos no válidos."); }
     const what = String(body && body.room || "");
     if (what === "all" && !owner) return fail(403, "permiso", "Solo el dueño puede vaciar todo.");
-    const cond = what === "all" ? "room NOT LIKE 'dm:%'" : "room = ?";
+    // "all" = solo las salas públicas (General y las de carrera): ni los chats privados (dm:) ni los de grupo (g:) se tocan
+    const cond = what === "all" ? "(room = 'general' OR room LIKE 'c:%')" : "room = ?";
     const bind = what === "all" ? [] : [roomKey(what, row.career)];
     if (what !== "all" && !bind[0]) return fail(400, "sala", "Sala no válida.");
     await env.DB.prepare(`DELETE FROM reports WHERE message_id IN (SELECT id FROM messages WHERE ${cond})`).bind(...bind).run();
