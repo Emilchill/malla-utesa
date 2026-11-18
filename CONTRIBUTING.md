@@ -4,10 +4,16 @@
 
 ## 0. Acceso al repositorio (para el dueño)
 
-El repo es privado. Para que un amigo colabore: GitHub → **Settings → Collaborators → Add people** y dale el rol **Read**
-(*no* Write). Con *Read* puede clonar y hacer **fork** del repo y abrir Pull Requests desde su fork; el dueño los revisa y hace el merge.
-Quien tenga *Write* puede publicar directo a producción y usar el token de Cloudflare, y GitHub no deja proteger `main` en repos
-privados gratuitos (ver `SECURITY.md`). Nunca des *Write* ni *Admin* a alguien que no sea de confianza total.
+El repo es privado y está en una cuenta personal. **Importante:** en cuentas personales GitHub NO tiene rol de solo lectura:
+todo colaborador invitado (Settings → Collaborators → Add people) recibe permiso de **escritura**. Eso significa que puede subir a
+`main` y publicar en producción, editar los workflows y usar el token de Cloudflare (y `main` no se puede proteger en repos privados
+gratuitos; ver `SECURITY.md`). Opciones:
+
+* **Solo amigos de confianza total**: invítalos como colaboradores y acuerden la regla "nunca push directo a `main`; todo por Pull Request".
+* **Más seguro (recomendado si crece el grupo)**: mover el repo a una *Organización* gratuita de GitHub, donde sí existe el rol **Read**.
+  Los amigos hacen *fork* y Pull Requests; el dueño aprueba y hace el merge. Hay que volver a crear los secretos de Actions allí.
+* Alternativa sin invitar a nadie: que te manden sus cambios como Pull Request desde un repo propio (si el repo fuera público) o como parche.
+
 Los CI de un Pull Request desde fork pueden requerir que el dueño los apruebe en la pestaña *Actions*.
 
 ## 1. Preparar tu computador
