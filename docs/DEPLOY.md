@@ -12,7 +12,8 @@ merge a main ──► Cloudflare Pages (conectado a este repo) ──► build 
   Esas vistas previas usan la misma base D1 de producción (no hay base de pruebas): no pruebes en ellas con datos que no quieras en producción,
   y trátalas como públicas (el chat es el real). Para probar cambios usa `npm run dev` en local.
 * **Configuración de build** (Cloudflare → malla-utesa → Settings → Build):
-  * Comando de build: `sed -i -E "s/\?v=[0-9A-Za-z]+/?v=${CF_PAGES_COMMIT_SHA:0:8}/g" app/*.html` (cache-busting automático: pone el commit en los `?v=` de los HTML).
+  * Comando de build: `sed -i -E "s/\?v=[0-9A-Za-z]+/?v=$(printf %.8s "$CF_PAGES_COMMIT_SHA")/g" app/*.html` (cache-busting automático:
+    pone el commit en los `?v=` de los HTML). Ojo: el `sh` de Cloudflare **no** admite `${VAR:0:8}` (falla con "Bad substitution").
   * Directorio de salida: `app` (solo esa carpeta sale a Internet; docs, pruebas, herramientas y `legacy/` no).
   * Rama de producción: `main`.
 * El `app/_worker.js` de la carpeta de salida es el backend (Pages *advanced mode*): Cloudflare lo detecta solo.
