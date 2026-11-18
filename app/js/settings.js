@@ -310,10 +310,10 @@ export function initSettings(api) {
     const have = full.filter(a => earned.has(a.id)).length;
 
     $("set-frames-intro").innerHTML = verified && u.needsRelink
-      ? `Tus logros se verificaron antes de que agregáramos los nuevos, así que <strong>faltan los más recientes</strong>. Vuelve a vincular con tu matrícula <strong>una sola vez</strong> y se actualizan solos, y de ahí en adelante cada logro nuevo te aparece sin hacer nada. <button type="button" class="link-btn" data-open-utesa>Vincular ahora</button>`
+      ? `Tus logros se verificaron antes de que agregáramos los nuevos, así que <strong>faltan los más recientes</strong>. Vuelve a vincular con UTESA <strong>una sola vez</strong> y se actualizan solos, y de ahí en adelante cada logro nuevo te aparece sin hacer nada. <button type="button" class="link-btn" data-open-utesa>Vincular ahora</button>`
       : verified
-      ? `Tienes <strong>${have} de ${full.length}</strong> logros de tu carrera. Se verificaron el ${new Date(u.verifiedAt).toLocaleDateString("es-DO", { day: "numeric", month: "long" })}${u.verifiedVia === "bookmark" ? " con el marcador" : ""}; vuelve a vincular con tu matrícula o el marcador para actualizarlos.`
-      : `Cada materia clave que apruebas desbloquea un marco para tu avatar. <strong>Solo cuentan si vinculas con tu matrícula</strong> (inicio de sesión directo) <strong>o con el marcador</strong>: el modo manual no los desbloquea. <button type="button" class="link-btn" data-open-utesa>Vincular ahora</button>`;
+      ? `Tienes <strong>${have} de ${full.length}</strong> logros de tu carrera. Se verificaron el ${new Date(u.verifiedAt).toLocaleDateString("es-DO", { day: "numeric", month: "long" })}${u.verifiedVia === "bookmark" ? " con el marcador" : ""}; vuelve a vincular con UTESA para actualizarlos.`
+      : `Cada materia clave que apruebas desbloquea un marco para tu avatar. <strong>Solo cuentan si vinculas con el botón de UTESA</strong> (inicias sesión en la página oficial y la app lee tu avance): el modo manual no los desbloquea. <button type="button" class="link-btn" data-open-utesa>Vincular ahora</button>`;
 
     const cur = u.frame ? (full.find(a => a.id === u.frame) || MOD_BY_ID[u.frame] || null) : null;
     $("set-frames-equipped").innerHTML = `

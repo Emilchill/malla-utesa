@@ -43,3 +43,12 @@ El dueño del proyecto (quien administra Cloudflare) tiene acceso técnico a tod
 * *Credenciales filtradas* (token de Cloudflare/GitHub): revocar en el panel correspondiente, crear uno nuevo, actualizar el secreto de GitHub.
 * *Usuario abusivo*: reportar → moderador oculta → dueño elimina (`/api/users/delete`; queda baneado).
 * *Cuenta eliminada por error*: `DELETE FROM banned WHERE uid = '…'` en D1 (el perfil y los mensajes ya no se recuperan).
+
+## Cambio del 2026-11-18: la contraseña de UTESA ya no pasa por la app
+
+El formulario de inicio de sesión directo (matrícula + contraseña) se **retiró de la interfaz**. Ahora el estudiante inicia sesión en la página
+oficial de UTESA y el marcador (que corre dentro de `www.utesa.edu/webestudi`) lee `asignaturas-pendientes.aspx` y `resumen.aspx`, llama a
+`cerrarses.aspx` para **cerrar la sesión de UTESA** y envía solo la lista de pendientes y los contadores a la app (`POST /api/utesa-verify`).
+* El endpoint `POST /api/utesa-login` **sigue existiendo en el worker pero ya no se usa**. Recomendado: eliminarlo (y sus pruebas) para quitar
+  la superficie de "intermediario de contraseñas" descrita arriba; ver `docs/ROADMAP.md`.
+* El cierre de sesión del marcador no se probó contra el portal real (solo con simulación): `cerrarses.aspx` es la misma página que usa el worker.

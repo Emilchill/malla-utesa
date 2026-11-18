@@ -33,7 +33,7 @@ const RECINTO_KEY = "malla_recinto";
 let ctx = null;
 let lastCounts = null;
 let lastPending = null;      // lista de pendientes del último análisis
-let lastFromBookmark = false; // ¿vino del marcador? (el inicio directo ya lo verifica el servidor)
+let lastFromBookmark = false; // ¿vino del marcador? (el marcador verifica con /api/utesa-verify)
 
 /* ---------- Utilidades ---------- */
 function norm(str) {
@@ -191,7 +191,8 @@ function bookmarkletBody(appUrl, hashKey, metaPrefix) {
       var meta = metaPrefix + "MODO=sync" +
         "|CARRERA=" + v(pen.d, "txtNombrecar") + "|PENSUM=" + v(pen.d, "txtPensum") +
         "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens");
-      send(meta, lines);
+      // Cierra la sesión de UTESA (mismo origen, con la cookie que abrió el estudiante) y luego manda los datos a la app
+      fetch(base + "cerrarses.aspx", { credentials: "include" }).catch(function () {}).then(function () { send(meta, lines); });
     }).catch(function () { alert("No se pudo leer el portal. Recarga la página de UTESA e inténtalo de nuevo."); });
     return;
   }

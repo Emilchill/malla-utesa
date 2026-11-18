@@ -3,7 +3,7 @@
 Lista viva. Marca con [x] lo que se complete y muévelo a `CHANGELOG-FEATURES.md`. Pensada también como menú de tareas para amigos e IAs.
 
 ## Seguridad y confiabilidad (prioridad alta)
-- [ ] **Exigir sesión en `/api/utesa-login`** (hoy acepta peticiones sin token) para que no sirva de intermediario a quien no tenga cuenta.
+- [ ] **Eliminar `/api/utesa-login`** (ya sin uso en la interfaz desde 2026-11-18; quita el riesgo de intermediario de contraseñas) o, si se conserva, **exigir sesión en él** (hoy acepta peticiones sin token) para que no sirva de intermediario a quien no tenga cuenta.
 - [ ] **Límite de intentos persistente** (D1 o regla de Cloudflare) en lugar de memoria del worker, para login y verificación.
 - [ ] Turnstile (captcha de Cloudflare) en el inicio de sesión directo.
 - [ ] Botón "desvincular y borrar mis datos" (borrar `verified_*`, `done`, `earned`) y aviso de consentimiento más claro.

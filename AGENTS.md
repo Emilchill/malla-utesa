@@ -44,7 +44,7 @@ Node ≥ 22.5 (usa `node:sqlite`). **Siempre corre `npm run check && npm test` a
 | `app/js/frames.js` | Marcos animados del avatar (logros + 5 exclusivos de moderación). |
 | `app/js/achievements.js` | Los 368 logros (id = código de materia). `ranks.js`: rangos por %. `medal.js`: medallas. |
 | `app/js/pensums-data.js` | Pénsum 2023 de las 18 carreras (materias, créditos, requisitos). |
-| `app/js/utesa-import.js` | Vinculación con UTESA: inicio directo, marcador y texto pegado. |
+| `app/js/utesa-import.js` | Vinculación con UTESA: marcador (bookmarklet que lee el portal, cierra la sesión de UTESA y envía) y texto pegado. El formulario de inicio directo (matrícula + contraseña) ya no está en la interfaz; `/api/utesa-login` sigue en el worker pero sin uso. |
 | `app/js/settings.js`, `theme.js`, `malla-view.js`, `charts-view.js`, `modal.js` | Configuración, temas, vistas de malla y gráficos, modales. |
 | `app/css/style.css` | Todos los estilos. Al final hay bloques por función (chat, marcos, pulido de UX). |
 | `tools/build-worker-data.mjs` | Inyecta datos de `achievements.js`, `pensums-data.js` y `tools/malas-palabras.txt` dentro de `_worker.js`. |

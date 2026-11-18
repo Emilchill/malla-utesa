@@ -46,7 +46,7 @@ export function rankCardHtml(pct, { own = false } = {}) {
   const r = pct == null && !own ? { ...UNVERIFIED, blurb: "Aún no ha vinculado su cuenta con UTESA" } : rankFor(pct); // a otros se les habla en tercera persona
   const nx = nextRank(pct);
   const detail = pct == null
-    ? (own ? "Vincula con tu matrícula de UTESA (inicio de sesión directo) para ganar tu rango." : "")
+    ? (own ? "Vincula tu cuenta de UTESA para ganar tu rango." : "")
     : nx ? `${own ? "Te faltan" : "Le faltan"} ${nx.left}% para ser <b>${esc(nx.rank.name)}</b>` : "¡Rango máximo!";
   return `<div class="rank-card" style="--rk:${r.color}">
     <span class="rank-badge">${icon(r.glyph, 22)}</span>

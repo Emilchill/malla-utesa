@@ -14,7 +14,7 @@ chats privados, grupos y moderación.
 | Área | Resumen |
 |---|---|
 | **Malla y avance** | Malla interactiva con ruta de requisitos, tarjetas, gráficos, porcentaje de avance, modo manual o vinculación con UTESA. |
-| **Vincular con UTESA** | Inicio de sesión directo (matrícula + contraseña, procesada solo en memoria) o **marcador** (bookmarklet). Verifica el avance y desbloquea logros. |
+| **Vincular con UTESA** | Inicias sesión en la **página oficial de UTESA** y un botón (bookmarklet) copia tu avance, **cierra tu sesión de UTESA** y te trae de vuelta; la contraseña nunca pasa por la app. También se puede copiar y pegar. Verifica el avance y desbloquea logros. |
 | **Personaje y temas** | Creador de personajes SVG (34 estilos de ropa, temporada navideña, extras), 6 temas de color. |
 | **Logros y marcos** | 368 logros (uno por materia clave), marcos animados únicos para el avatar y rangos por % de carrera. |
 | **Comunidad** | Chat General y por carrera, estudiantes y amigos, chat privado, grupos con administradores propios, "en línea", avisos y silenciar chats. |
