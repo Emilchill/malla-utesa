@@ -3,13 +3,20 @@
 ## Resumen
 
 ```
-merge a main ──► GitHub Actions ──► npm run check + npm test ──► wrangler pages deploy app ──► https://malla-utesa.pages.dev
+merge a main ──► Cloudflare Pages (conectado a este repo) ──► build ──► https://malla-utesa.pages.dev
 ```
 
-* El proyecto de Cloudflare Pages es **`malla-utesa`** (subido por "Direct Upload", no conectado a Git). Por eso el despliegue
-  lo hace **GitHub Actions con Wrangler**: así se conservan el proyecto, el dominio, el binding de D1 y las variables que ya están configuradas.
-* Solo se publica la carpeta **`app/`**. Documentación, pruebas, herramientas y `legacy/` no salen a Internet.
-* El workflow es [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml). Los cambios entran por Pull Request (el CI está en `ci.yml`).
+* El proyecto de Cloudflare Pages **`malla-utesa`** está **conectado directamente a este repositorio de GitHub** (desde 2026-11-18;
+  antes era "Direct Upload" y se desplegaba con GitHub Actions). Cada push a `main` dispara un build y publica en producción.
+* Las ramas y Pull Requests **no** se publican en producción: Cloudflare crea vistas previas (*Preview*) en `https://<rama>.malla-utesa.pages.dev`.
+  Esas vistas previas usan la misma base D1 de producción (no hay base de pruebas): no pruebes en ellas con datos que no quieras en producción,
+  y trátalas como públicas (el chat es el real). Para probar cambios usa `npm run dev` en local.
+* **Configuración de build** (Cloudflare → malla-utesa → Settings → Build):
+  * Comando de build: `sed -i -E "s/\?v=[0-9A-Za-z]+/?v=${CF_PAGES_COMMIT_SHA:0:8}/g" app/*.html` (cache-busting automático: pone el commit en los `?v=` de los HTML).
+  * Directorio de salida: `app` (solo esa carpeta sale a Internet; docs, pruebas, herramientas y `legacy/` no).
+  * Rama de producción: `main`.
+* El `app/_worker.js` de la carpeta de salida es el backend (Pages *advanced mode*): Cloudflare lo detecta solo.
+* **El CI (`.github/workflows/ci.yml`) ya NO decide el despliegue**: Cloudflare publica aunque el CI falle. Mira el check de GitHub antes de hacer merge.
 
 ## Recursos de Cloudflare (identificadores, no secretos)
 
@@ -22,40 +29,14 @@ merge a main ──► GitHub Actions ──► npm run check + npm test ──�
 | Variable `ADMIN_UIDS` | opcional: uids de Firebase con rol de dueño |
 
 Las variables y el binding están en **Cloudflare → Workers y Pages → malla-utesa → Settings → Bindings / Variables and secrets**.
-Wrangler **no los toca** porque el repositorio no tiene `wrangler.toml` (la configuración del panel manda).
+No hay `wrangler.toml`: manda la configuración del panel. Los cambios de variables/bindings se aplican en el **siguiente despliegue**
+(haz un commit o *Retry deployment*).
 
-## Secretos de GitHub necesarios
+## Conexión con GitHub
 
-En **GitHub → Settings → Secrets and variables → Actions** del repositorio:
-
-| Secreto | Qué es |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | Token de API de Cloudflare con el permiso mínimo: **Account › Cloudflare Pages › Edit**. |
-| `CLOUDFLARE_ACCOUNT_ID` | El Account ID de la tabla anterior. |
-
-Los secretos de GitHub **no se pueden leer** una vez guardados (solo reemplazar).
-
-### Cómo rotar el token de Cloudflare (paso a paso)
-
-1. Cloudflare → My Profile → **API Tokens** → *Create Token* → *Create Custom Token* (empezar desde cero).
-2. Nombre `github-actions-malla-utesa`; política **Account › Cloudflare Pages › Edit**. Si puedes, limita *Account Resources* a la cuenta
-   de `malla-utesa` y ponle fecha de vencimiento (y apunta en `docs/ROADMAP.md` cuándo rotarlo).
-3. Copia el token (solo se muestra una vez) y guárdalo: `gh secret set CLOUDFLARE_API_TOKEN --repo Emilchill/malla-utesa`
-   (pega el valor cuando lo pida) o en GitHub → Settings → Secrets and variables → Actions.
-4. Lanza **Actions → Deploy → Run workflow** y confirma que termina en verde.
-5. Solo entonces **revoca el token anterior** en Cloudflare (API Tokens → ⋯ → Roll/Delete).
-
-El token actual se creó el 2026-11-18, sin vencimiento y para todas las cuentas del dueño.
-
-## Qué hace el workflow
-
-1. `test`: Node 24 → `npm run check` (sintaxis + escaneo de secretos), comprueba que `_worker.js` esté al día con `npm run build:data` y corre `npm test`.
-2. `deploy` (solo `push` a `main`, después de `test`): reemplaza el `?v=` de los HTML por el commit (cache-busting automático)
-   y ejecuta `wrangler pages deploy app --project-name=malla-utesa --branch=main`.
-3. Un solo despliegue a la vez (`concurrency`). También se puede lanzar a mano: **Actions → Deploy → Run workflow**.
-
-Si Cloudflare registra el despliegue como *Preview* en vez de *Production*, revisa en el panel la **Production branch** del proyecto
-(Settings → Builds / Branches) y que coincida con `--branch=main`.
+* Cloudflare accede a GitHub mediante la app **Cloudflare Workers and Pages**, instalada **solo en el repo `Emilchill/malla-utesa`**
+  (GitHub → Settings → Applications → Installed GitHub Apps para revisarla o quitarla).
+* **No hay secretos de Cloudflare en GitHub**: ya no se necesita token de API ni `CLOUDFLARE_ACCOUNT_ID` como secreto.
 
 ## Cosas que NO se despliegan solas
 
@@ -69,16 +50,18 @@ Si Cloudflare registra el despliegue como *Preview* en vez de *Production*, revi
 Cloudflare → Workers y Pages → `malla-utesa` → **Deployments** → elige uno anterior → **Rollback** (inmediato).
 Después corrige en el repo (revierte el commit con `git revert` y haz merge).
 
-## Entornos y vistas previas
+## Si hay que recrear el proyecto (por qué se hizo así)
 
-Los Pull Requests **no** se publican (el CI solo prueba). Para ver cambios usa `npm run dev` en local.
+Un proyecto de Pages creado por subida directa no se puede conectar a Git después: hubo que borrarlo y crearlo de nuevo con el mismo nombre
+(para conservar el dominio `malla-utesa.pages.dev`). Pasos, por si se repite:
+
+1. Anota variables y bindings (Settings). La base D1 vive aparte y no se borra con el proyecto.
+2. Settings → Delete project (cae el sitio unos minutos).
+3. Workers y Pages → Create → Pages → Import an existing Git repository → `Emilchill/malla-utesa`.
+4. Nombre `malla-utesa`, rama `main`, comando de build y directorio de salida como arriba, variable `ADMIN_EMAILS`.
+5. Settings → Bindings → D1 `DB` → `malla-utesa-db`; vuelve a desplegar.
+6. Verifica: `curl -s https://malla-utesa.pages.dev/api/user -o /dev/null -w "%{http_code}"` → `401` (la API responde) y la página abre.
 
 ## Respaldo en Netlify
 
 `legacy/netlify/` conserva el antiguo respaldo estático (sin `/api/user`). No se despliega desde aquí y no es necesario para producción.
-
-## Primera vez (ya hecho; por si hay que repetirlo)
-
-1. Crear el token de Cloudflare (permiso Pages › Edit) y guardar `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` como secretos del repo.
-2. Hacer merge a `main` o ejecutar el workflow a mano.
-3. Verificar: `curl -s https://malla-utesa.pages.dev/api/user -o /dev/null -w "%{http_code}"` → `401` (la API responde) y la página abre.

@@ -1,10 +1,9 @@
 name: CI
 
-# Revisa cada Pull Request y cada rama (menos main, que ya pasa por el despliegue).
+# Revisa cada Pull Request y cada push (incluido main). El despliegue NO está aquí: lo hace Cloudflare Pages conectado a este repo.
 on:
   pull_request:
   push:
-    branches-ignore: [main]
 
 permissions:
   contents: read

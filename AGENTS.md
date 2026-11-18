@@ -100,5 +100,6 @@ Node ≥ 22.5 (usa `node:sqlite`). **Siempre corre `npm run check && npm test` a
 
 ## 9. Despliegue (resumen)
 
-Merge a `main` → GitHub Actions ejecuta `npm run check` y `npm test` → `wrangler pages deploy app` al proyecto **malla-utesa**
-(mismo dominio). Detalles, secretos y reversa en `docs/DEPLOY.md`. Las reglas de Firestore **no** se despliegan solas.
+Cloudflare Pages está **conectado a este repo**: push/merge a `main` → build de Cloudflare (`app/` como salida, `?v=` = commit) →
+https://malla-utesa.pages.dev. GitHub Actions (`ci.yml`) solo corre `npm run check` y `npm test`; **no bloquea el despliegue**, así que
+nunca hagas merge con el CI en rojo. Detalles y reversa en `docs/DEPLOY.md`. Las reglas de Firestore **no** se despliegan solas.

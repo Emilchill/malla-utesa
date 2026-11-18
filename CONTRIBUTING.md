@@ -11,7 +11,7 @@ gratuitos; ver `SECURITY.md`). Opciones:
 
 * **Solo amigos de confianza total**: invítalos como colaboradores y acuerden la regla "nunca push directo a `main`; todo por Pull Request".
 * **Más seguro (recomendado si crece el grupo)**: mover el repo a una *Organización* gratuita de GitHub, donde sí existe el rol **Read**.
-  Los amigos hacen *fork* y Pull Requests; el dueño aprueba y hace el merge. Hay que volver a crear los secretos de Actions allí.
+  Los amigos hacen *fork* y Pull Requests; el dueño aprueba y hace el merge. Habría que reinstalar la app de Cloudflare en la organización y reconectar el proyecto de Pages.
 * Alternativa sin invitar a nadie: que te manden sus cambios como Pull Request desde un repo propio (si el repo fuera público) o como parche.
 
 Los CI de un Pull Request desde fork pueden requerir que el dueño los apruebe en la pestaña *Actions*.

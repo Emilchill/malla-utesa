@@ -81,7 +81,7 @@ Este repositorio está pensado para que una IA pueda ayudarte sin romper nada:
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Cómo funciona por dentro |
 | [`docs/API.md`](docs/API.md) | Todas las rutas de `/api/*` |
 | [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) | Tablas de D1, documentos de Firestore, salas del chat |
-| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cloudflare, GitHub Actions, secretos, reversa |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cloudflare Pages conectado a GitHub, build, reversa |
 | [`docs/TESTING.md`](docs/TESTING.md) | Pruebas y entorno local |
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Qué hace la app, función por función |
 | [`docs/PRIVACY-AND-DATA.md`](docs/PRIVACY-AND-DATA.md) | Qué datos se guardan y riesgos conocidos |
