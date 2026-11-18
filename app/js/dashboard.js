@@ -669,7 +669,7 @@ function renderSync() {
     el.innerHTML = `
       <div class="sync-main">
         <div class="sync-title">Sincronización con UTESA</div>
-        <p>Trae tu progreso real desde la página oficial de UTESA: inicias sesión allá, la app copia tu avance y cierra tu sesión de UTESA.</p>
+        <p>Trae tu progreso real desde el portal de UTESA con tu matrícula, o con el marcador si prefieres no dar tu contraseña.</p>
       </div>
       <button class="btn btn-primary btn-sm" data-open-utesa>Sincronizar con UTESA</button>`;
     return;

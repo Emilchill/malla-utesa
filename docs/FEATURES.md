@@ -12,7 +12,7 @@ Inventario por área, desde el punto de vista de quien usa la app. (La bitácora
 * **Malla interactiva** (`malla-view.js`) con ruta de requisitos: tocar una materia resalta sus prerrequisitos y lo que abre; zoom y arrastre.
 * **Tarjetas** por cuatrimestre, **gráficos** (`charts-view.js`), buscador y filtros (todas/aprobadas/pendientes/electivas).
 * Porcentaje, materias aprobadas/pendientes y créditos; lista de "listas para cursar" según requisitos.
-* **Modo manual** (marcar a mano) o **vincular con UTESA**: **marcador** (inicias sesión en la página oficial de UTESA; el botón lee tu avance, cierra tu sesión de UTESA y te devuelve a la app) o texto pegado. El inicio de sesión directo con contraseña se retiró de la interfaz (2026-11-18).
+* **Modo manual** (marcar a mano) o **vincular con UTESA**: inicio de sesión directo, **marcador** o texto pegado.
 * Impresión de la malla en 2 páginas; PDF del pénsum.
 
 ## Personaje, temas y marcos

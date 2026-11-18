@@ -235,26 +235,66 @@
       </div>
 
       <div data-step="intro">
-        <p class="utesa-lead">Inicia sesión en la <strong>página oficial de UTESA</strong>: la app copia tu lista de materias y <strong>cierra tu sesión de UTESA por ti</strong>. Tu contraseña se escribe solo en utesa.edu y <strong>nunca pasa por esta app</strong>; tampoco se guardan tus notas.</p>
+        <p class="utesa-lead">Trae tu avance real desde el <strong>portal estudiantil de UTESA</strong>. Solo se lee tu lista de materias: <strong>no se guardan tus notas ni tu contraseña</strong>.</p>
         <p class="muted utesa-last" id="utesa-last"></p>
 
-        <div class="utesa-alt" id="utesa-alt">
+        <form class="utesa-login" id="utesa-login-form" autocomplete="off" novalidate>
+          <div class="st-title">Inicia sesión con tu cuenta de UTESA <span class="tag-soft">más rápido</span></div>
+          <div class="ul-grid">
+            <div class="field">
+              <label class="field-label" for="ul-recinto">Recinto</label>
+              <div class="select-wrap">
+                <select class="input" id="ul-recinto" required>
+                  <option value="" selected disabled>Elige tu recinto…</option>
+                  <option value="UTSAN">Santiago · Sede</option>
+                  <option value="UTSDG">Santo Domingo</option>
+                  <option value="UTSDO">Santo Domingo Oriental</option>
+                  <option value="UTDJB">Dajabón</option>
+                  <option value="UTGHD">Gaspar Hernández</option>
+                  <option value="UTMAO">Mao</option>
+                  <option value="UTMOC">Moca</option>
+                  <option value="UTPPT">Puerto Plata</option>
+                  <option value="UTGRS">Santiago · Escuela de Graduados</option>
+                  <option value="UTGRD">Santo Domingo · Escuela de Graduados</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="ul-matricula">Matrícula</label>
+              <input class="input" id="ul-matricula" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ej. 1-00-0000" maxlength="14">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="ul-pass">Contraseña de UTESA</label>
+            <div class="ul-pass">
+              <input class="input" id="ul-pass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="La misma que usas en utesa.edu" maxlength="128">
+              <button type="button" class="ul-eye" id="ul-eye" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+            </div>
+          </div>
+          <label class="set-check ul-consent">
+            <input type="checkbox" id="ul-consent">
+            <span>Entiendo que mi matrícula y contraseña se envían cifradas a un servidor de esta app <b>solo para iniciar sesión en UTESA y leer mi avance</b>. No se guardan ni se comparten.</span>
+          </label>
+          <div class="err-box" id="ul-error" role="alert"></div>
+          <button type="submit" class="btn btn-primary ul-submit" id="ul-submit">Vincular con mi cuenta de UTESA</button>
+        </form>
+
+        <details class="utesa-alt" id="utesa-alt">
+          <summary>Prefiero no dar mi contraseña aquí</summary>
+          <p class="utesa-alt-note">Puedes enviar tu avance desde el propio portal de UTESA, con un marcador o copiando y pegando. Tu contraseña se queda solo en utesa.edu.</p>
           <button type="button" class="btn btn-ghost btn-sm utesa-video-btn" data-open-video>▶ Ver video tutorial (1 min)</button>
           <ol class="utesa-steps">
             <li>
-              <div class="st-title">Guarda el botón (solo la primera vez)</div>
-              <p>En la computadora, arrástralo a tu barra de marcadores. En el teléfono, guarda esta página como marcador y edita su dirección.</p>
-              <p class="utesa-tip"><b>¿No ves la barra de marcadores?</b> Actívala con <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> (en Mac: <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>) o desde el menú ⋮ → Marcadores → Mostrar barra de marcadores.</p>
-              <a class="bookmarklet" id="utesa-bookmarklet" href="#">📥 Enviar a Malla UTESA</a>
-            </li>
-            <li>
-              <div class="st-title">Entra a la página oficial de UTESA</div>
+              <div class="st-title">Entra al portal de UTESA</div>
               <p>En utesa.edu toca <em>Acceso → Estudiantes</em>, elige tu recinto e inicia sesión con tu matrícula.</p>
               <a class="btn btn-primary btn-sm" id="utesa-open-portal" href="https://www.utesa.edu/home/index.php" target="_blank" rel="noopener">Abrir portal UTESA ↗</a>
             </li>
             <li>
-              <div class="st-title">Toca el botón dentro del panel</div>
-              <p>Un solo toque: copia tu avance, <b>cierra tu sesión de UTESA</b> y te trae de vuelta aquí para confirmar.</p>
+              <div class="st-title">Envía tu avance con un clic</div>
+              <p>Guarda este botón en tu barra de marcadores (en la computadora, arrástralo; en el teléfono, guarda esta página como marcador y edita su dirección). Luego, dentro del panel de UTESA, tócalo: tu avance llega aquí solo.</p>
+              <p class="utesa-tip"><b>¿No ves la barra de marcadores?</b> Actívala con <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> (en Mac: <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>) o desde el menú ⋮ → Marcadores → Mostrar barra de marcadores.</p>
+              <a class="bookmarklet" id="utesa-bookmarklet" href="#">📥 Enviar a Malla UTESA</a>
             </li>
             <li>
               <div class="st-title">…o copia y pega</div>
@@ -263,11 +303,11 @@
               <button class="btn btn-primary" id="utesa-analyze" style="margin-top:10px;">Detectar materias</button>
             </li>
           </ol>
-        </div>
+        </details>
 
         <details class="utesa-why">
-          <summary>¿Por qué hay que usar un botón y no solo iniciar sesión aquí?</summary>
-          <p>UTESA no ofrece un “Iniciar sesión con UTESA” para apps externas, y los navegadores no dejan que una página lea otra (la de UTESA). Por eso el botón se ejecuta <em>dentro</em> de la página oficial, con la sesión que tú abriste: lee solo tus materias pendientes y los contadores del resumen, cierra la sesión de UTESA y te devuelve aquí. Tu contraseña nunca viaja a esta app.</p>
+          <summary>¿Qué pasa con mi contraseña?</summary>
+          <p>Viaja por una conexión cifrada (HTTPS) hasta una función del servidor de esta app, que inicia sesión en el portal de UTESA por ti, lee tu lista de materias pendientes y cierra la sesión. No se guarda en ninguna base de datos ni en registros, y nunca vuelve a tu navegador. UTESA no ofrece un “Iniciar sesión con UTESA” para apps externas; por eso existe la opción de usar el marcador o copiar y pegar.</p>
         </details>
       </div>
 
