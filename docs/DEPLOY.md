@@ -36,9 +36,12 @@ No hay `wrangler.toml`: manda la configuración del panel. Los cambios de variab
 ## Cabeceras de seguridad
 
 [`app/_headers`](../app/_headers) las aplica Cloudflare a los **archivos estáticos** (no a `/api/*`, que pone las suyas desde el worker):
-`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y una CSP mínima (`frame-ancestors 'none'`, `object-src`, `base-uri`, `form-action`).
-La CSP completa está **solo en modo informe** (`Content-Security-Policy-Report-Only`): no bloquea nada, pero el navegador avisa en su consola de lo que bloquearía.
-Antes de activarla revisa esos avisos con la app real. Una CSP mal hecha rompe el inicio de sesión de Firebase. `tests/headers.test.mjs` comprueba el formato.
+`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y una **CSP completa y activa** desde 2026-11-18
+(antes estuvo un tiempo en modo informe; se probó el login con Google y no hubo violaciones). Permite solo los orígenes que la app usa: `self`, Firebase/Google
+(`gstatic`, `*.googleapis.com`, `accounts.google.com`, `*.firebaseapp.com`), Google Fonts y YouTube sin cookies. Mantiene `unsafe-inline` en scripts y estilos
+porque el sitio usa `<script>` y `onclick=` en línea.
+**Si añades un servicio externo nuevo** (otra API, imágenes, fuentes, un iframe…), agrégalo a `app/_headers` o el navegador lo bloqueará.
+Si algo se rompe tras un despliegue, mira la consola: dirá `Refused to ...` con la directiva. `tests/headers.test.mjs` comprueba el formato y los orígenes de los HTML.
 Compruébalo tras un despliegue con: `curl -sI https://malla-utesa.pages.dev/dashboard.html`.
 
 ## Conexión con GitHub
