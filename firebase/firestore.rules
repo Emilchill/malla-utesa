@@ -1,0 +1,32 @@
+rules_version = '2';
+// Reglas de Firestore de Malla UTESA (proyecto malla-curricular-38175).
+// Se publican A MANO en la consola de Firebase: Firestore → Reglas → pegar → Publicar.
+// Firestore solo se usa para "pings" en vivo del chat; los mensajes y los datos de usuarios viven en D1.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Documento heredado de la versión antigua: cada quien solo lee el suyo; nadie escribe.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // "Algo cambió en esta sala": general, c_<CARRERA> (3 letras) o g_<id> (grupo).
+    match /chatPing/{room} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && (room == 'general' || room.matches('c_[A-Z]{3}') || room.matches('g_[0-9]{1,9}'))
+        && request.resource.data.keys().hasOnly(['t'])
+        && request.resource.data.t is timestamp;
+    }
+
+    // Bandeja personal (por id público): mensajes privados, solicitudes y respuestas.
+    match /inbox/{pid} {
+      allow read: if request.auth != null && pid.matches('[0-9a-f]{16}');
+      allow write: if request.auth != null
+        && pid.matches('[0-9a-f]{16}')
+        && request.resource.data.keys().hasOnly(['t'])
+        && request.resource.data.t is timestamp;
+    }
+  }
+}

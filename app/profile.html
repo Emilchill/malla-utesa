@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="utesa">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
+<meta name="darkreader-lock">
+<meta name="theme-color" content="#00542B">
+<meta name="description" content="Configura tu perfil de Malla UTESA en cuatro pasos: nombre, personaje, carrera y tema.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2300542B'/%3E%3Cpath d='M16 46V20h6l10 14 10-14h6v26h-6V30L32 44 22 30v16z' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Configura tu perfil · Malla UTESA</title>
+<script>
+/* Tema guardado: se aplica antes de pintar para que la pantalla de carga respete los colores elegidos */
+(function () {
+  try {
+    var t = localStorage.getItem("malla_theme") || "utesa";
+    var bar = { utesa: "#00542B", medianoche: "#0B1220", atardecer: "#E85D2C", oceano: "#0E7C86", violeta: "#150F26", coral: "#E23F63" };
+    if (!bar[t]) t = "utesa";
+    document.documentElement.setAttribute("data-theme", t);
+    var dark = t === "medianoche" || t === "violeta";
+    var cs = document.querySelector('meta[name="color-scheme"]'); if (cs) cs.setAttribute("content", dark ? "dark" : "only light");
+    var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", bar[t]);
+  } catch (e) { /* sin almacenamiento: se queda el tema por defecto */ }
+})();
+</script>
+<link rel="stylesheet" href="css/style.css?v=20261227">
+</head>
+<body>
+
+  <div class="disclaimer-strip">
+    <strong>Proyecto estudiantil independiente</strong> — no es un sitio oficial de UTESA.
+  </div>
+
+  <div class="profile-shell">
+    <div class="card profile-box wiz" id="wiz">
+      <div class="wiz-progress" aria-hidden="true"><i id="wiz-bar"></i></div>
+      <div class="wiz-top">
+        <span class="wiz-kicker" id="wiz-kicker">Paso 1 de 4</span>
+        <button type="button" class="wiz-link" id="wiz-out">Salir</button>
+      </div>
+
+      <!-- 1 · Nombre y sexo -->
+      <section class="wiz-step" id="step-1" aria-labelledby="t1">
+        <h2 id="t1">¡Bienvenido! ¿Cómo te llamas?</h2>
+        <p class="wiz-sub">Así te saludaremos dentro de la app.</p>
+        <div class="field">
+          <label class="field-label" for="user-name-in">Nombre completo</label>
+          <input class="input" type="text" id="user-name-in" placeholder="Ej. Juan Pérez" autocomplete="name" maxlength="60">
+        </div>
+        <div class="field">
+          <span class="field-label" id="sex-label">Sexo</span>
+          <div class="wiz-sex" id="sex-opts" role="radiogroup" aria-labelledby="sex-label"></div>
+          <p class="select-hint">Solo sirve para armar tu personaje inicial; podrás cambiarlo todo en el siguiente paso.</p>
+        </div>
+      </section>
+
+      <!-- 2 · Personaje -->
+      <section class="wiz-step" id="step-2" hidden aria-labelledby="t2">
+        <h2 id="t2">Personaliza tu personaje</h2>
+        <p class="wiz-sub">Parte de uno ya armado. Cambia lo que quieras o prueba con <b>Aleatorio</b>.</p>
+        <div class="set-card set-editor" id="avatar-host" role="group" aria-label="Creador de personaje"></div>
+      </section>
+
+      <!-- 3 · Carrera -->
+      <section class="wiz-step" id="step-3" hidden aria-labelledby="t3">
+        <h2 id="t3">¿Qué carrera estudias?</h2>
+        <p class="wiz-sub">Con esto te mostramos el pensum correcto y tu progreso real.</p>
+        <div class="field">
+          <label class="field-label" for="career-select">Tu carrera</label>
+          <div class="select-wrap">
+            <span class="select-badge" id="career-select-badge">?</span>
+            <select class="input" id="career-select">
+              <option value="" selected disabled>Selecciona tu carrera…</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <p class="select-hint" id="career-select-hint">Podrás ver el pénsum completo una vez selecciones tu carrera.</p>
+        </div>
+        <div class="wiz-careers" id="career-cards" role="radiogroup" aria-label="Carreras disponibles"></div>
+      </section>
+
+      <!-- 4 · Tema y resumen -->
+      <section class="wiz-step" id="step-4" hidden aria-labelledby="t4">
+        <h2 id="t4">Últimos detalles</h2>
+        <p class="wiz-sub">Elige el color de tu app. Podrás cambiarlo cuando quieras en Configuración.</p>
+        <div class="field">
+          <span class="field-label" id="theme-label">Tema de color</span>
+          <div class="wiz-themes" id="theme-picker" role="radiogroup" aria-labelledby="theme-label"></div>
+        </div>
+        <div class="wiz-summary" id="wiz-summary" aria-live="polite"></div>
+        <p class="wiz-note">Después podrás vincular tu cuenta de UTESA para traer tu avance real, o marcar tus materias a mano.</p>
+      </section>
+
+      <div class="err-box" id="err-msg" role="alert"></div>
+
+      <div class="wiz-nav">
+        <button type="button" class="btn btn-ghost" id="wiz-back" hidden>Atrás</button>
+        <button type="button" class="btn btn-primary" id="wiz-next">Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from "./js/firebase-config.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { loadUser, createUser } from "./js/store.js";
+    import { PENSUMS } from "./js/pensums-data.js";
+    import { THEMES, getLocalTheme, applyTheme } from "./js/theme.js";
+    import { buildCharacterEditor, avatarSvg, presetAvatar, SEX_OPTIONS } from "./js/avatars.js";
+
+    applyTheme(getLocalTheme());
+
+    const $ = (id) => document.getElementById(id);
+    const TOTAL = 4;
+    const state = { step: 1, name: "", sex: "f", avatar: presetAvatar("f"), bg: null, career: null, theme: getLocalTheme() };
+    let editor = null;
+    let editorSex = null; // para qué opción se armó el editor
+
+    /* ---------- Paso 1: sexo (con vista previa del personaje inicial) ---------- */
+    function renderSex() {
+      $("sex-opts").innerHTML = SEX_OPTIONS.map(o => `
+        <button type="button" class="wiz-sex-opt" role="radio" aria-checked="${state.sex === o.id}" data-sex="${o.id}">
+          <span class="wiz-sex-av">${avatarSvg(presetAvatar(o.id), 64, null)}</span>
+          <span class="wiz-sex-name">${o.label}</span>
+        </button>`).join("");
+    }
+    $("sex-opts").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-sex]");
+      if (!b) return;
+      if (state.sex !== b.dataset.sex) { state.sex = b.dataset.sex; state.avatar = presetAvatar(state.sex); state.bg = null; }
+      renderSex();
+      $("sex-opts").querySelector(`[data-sex="${state.sex}"]`)?.focus();
+    });
+    renderSex();
+
+    /* ---------- Paso 3: carreras ---------- */
+    const careerSelect = $("career-select");
+    Object.values(PENSUMS).forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.key;
+      opt.textContent = `${p.nombre} (${p.key})`;
+      careerSelect.appendChild(opt);
+    });
+    function renderCareerCards() {
+      $("career-cards").innerHTML = Object.values(PENSUMS).map(p => `
+        <button type="button" class="wiz-career" role="radio" aria-checked="${state.career === p.key}" data-career="${p.key}" style="--c:${p.color}">
+          <span class="wiz-career-badge">${p.key}</span>
+          <span class="wiz-career-txt"><b>${p.nombre}</b><small>${p.totalCreditos} créditos</small></span>
+        </button>`).join("");
+    }
+    function updateCareerPreview() {
+      const p = PENSUMS[state.career];
+      $("career-select-badge").style.background = p ? p.color : "var(--border)";
+      $("career-select-badge").textContent = p ? p.key : "?";
+      $("career-select-hint").textContent = p ? `${p.titulo} · ${p.totalCreditos} créditos totales.` : "Podrás ver el pénsum completo una vez selecciones tu carrera.";
+      careerSelect.value = state.career || "";
+      renderCareerCards();
+    }
+    careerSelect.addEventListener("change", () => { state.career = careerSelect.value || null; updateCareerPreview(); });
+    $("career-cards").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-career]");
+      if (!b) return;
+      state.career = b.dataset.career;
+      updateCareerPreview();
+      $("career-cards").querySelector(`[data-career="${state.career}"]`)?.focus();
+    });
+    updateCareerPreview();
+
+    /* ---------- Paso 4: tema y resumen ---------- */
+    function renderThemes() {
+      $("theme-picker").innerHTML = THEMES.map(t => `
+        <button type="button" class="theme-swatch${t.id === state.theme ? " theme-active" : ""}" role="radio" aria-checked="${t.id === state.theme}" data-theme-id="${t.id}">
+          <span class="theme-dots"><i style="background:${t.swatch[0]}"></i><i style="background:${t.swatch[1]}"></i><i style="background:${t.swatch[2]}"></i></span>
+          <span class="theme-label">${t.nombre}</span>
+        </button>`).join("");
+    }
+    $("theme-picker").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-theme-id]");
+      if (!b) return;
+      state.theme = b.dataset.themeId;
+      applyTheme(state.theme);
+      renderThemes();
+      renderSummary();
+      $("theme-picker").querySelector(`[data-theme-id="${state.theme}"]`)?.focus();
+    });
+    function renderSummary() {
+      const p = PENSUMS[state.career];
+      const first = (state.name.trim().split(/\s+/)[0]) || "";
+      $("wiz-summary").innerHTML = `
+        <span class="wiz-sum-av">${avatarSvg(state.avatar, 72, state.bg)}</span>
+        <span class="wiz-sum-txt"><b>${first ? "¡Listo, " + first.replace(/[<>&"]/g, "") + "!" : "¡Listo!"}</b>
+        <small>${p ? p.nombre : ""}</small></span>`;
+    }
+
+    /* ---------- Navegación entre pasos ---------- */
+    function showErr(msg) { const e = $("err-msg"); e.textContent = msg; e.classList.toggle("show", !!msg); }
+
+    function goTo(n) {
+      state.step = n;
+      for (let i = 1; i <= TOTAL; i++) $("step-" + i).hidden = i !== n;
+      $("wiz-kicker").textContent = `Paso ${n} de ${TOTAL}`;
+      $("wiz-bar").style.width = (n / TOTAL * 100) + "%";
+      $("wiz-back").hidden = n === 1;
+      $("wiz-next").textContent = n === TOTAL ? "Crear mi perfil" : "Continuar";
+      showErr("");
+      if (n === 2 && (!editor || editorSex !== state.sex)) {
+        editor?.destroy();
+        editorSex = state.sex;
+        editor = buildCharacterEditor($("avatar-host"), { avatar: state.avatar, bg: state.bg }, (st) => { state.avatar = st.avatar; state.bg = st.bg; });
+      }
+      if (n === 4) { renderThemes(); renderSummary(); }
+      const first = $("step-" + n).querySelector("input, select, button");
+      if (first && n !== 2) first.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function save() {
+      const btn = $("wiz-next");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;"></span>';
+      const data = {
+        name: state.name.trim().replace(/\s+/g, " "),
+        career: state.career,
+        theme: state.theme,
+        avatar: state.avatar,
+        avatarBg: state.bg,
+        done: [],
+      };
+      try {
+        await createUser(data);
+        window.location.href = "dashboard.html";
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Crear mi perfil";
+        showErr((e && e.serverMessage) || "No se pudo guardar tu perfil. Revisa tu conexión e intenta de nuevo.");
+      }
+    }
+
+    $("wiz-next").addEventListener("click", () => {
+      if (state.step === 1) {
+        state.name = $("user-name-in").value.trim();
+        if (!state.name) { showErr("Escribe tu nombre para continuar."); $("user-name-in").focus(); return; }
+        return goTo(2);
+      }
+      if (state.step === 3 && !state.career) { showErr("Selecciona tu carrera para continuar."); return; }
+      if (state.step < TOTAL) return goTo(state.step + 1);
+      save();
+    });
+    $("wiz-back").addEventListener("click", () => { if (state.step > 1) goTo(state.step - 1); });
+    $("wiz-out").addEventListener("click", async () => { try { await signOut(auth); } finally { window.location.href = "index.html"; } });
+    $("user-name-in").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("wiz-next").click(); } });
+    $("user-name-in").addEventListener("input", () => showErr(""));
+    goTo(1);
+
+    // Protección de ruta: si no hay sesión, vuelve al login.
+    // Si ya tiene perfil guardado, va directo al dashboard.
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = "index.html"; return; }
+      let existing = null;
+      try { existing = await loadUser(); } catch { /* si falla, se deja crear el perfil igual */ }
+      if (existing) {
+        window.location.href = "dashboard.html";
+      } else if (user.displayName && !$("user-name-in").value) {
+        $("user-name-in").value = user.displayName;
+      }
+    });
+  </script>
+</body>
+</html>

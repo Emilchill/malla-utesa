@@ -1,0 +1,48 @@
+name: Deploy
+
+# Merge a main = producción: https://malla-utesa.pages.dev (mismo proyecto de Cloudflare Pages, mismo dominio).
+# Requiere los secretos CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID (ver docs/DEPLOY.md).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# un solo despliegue a la vez; si llega otro, espera (no se cancela a medias)
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm run check
+      - run: |
+          npm run build:data
+          git diff --exit-code app/_worker.js
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache-busting automático (?v= de los HTML = commit)
+        run: sed -i -E "s/\?v=[0-9A-Za-z]+/?v=${GITHUB_SHA::8}/g" app/*.html
+
+      - name: Publicar en Cloudflare Pages (solo la carpeta app/)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy app --project-name=malla-utesa --branch=main

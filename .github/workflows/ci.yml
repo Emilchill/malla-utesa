@@ -1,0 +1,29 @@
+name: CI
+
+# Revisa cada Pull Request y cada rama (menos main, que ya pasa por el despliegue).
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Sintaxis y secretos
+        run: npm run check
+      - name: Datos del worker al día
+        # si cambiaste logros, pénsum o malas palabras, `npm run build:data` debe estar hecho y commiteado
+        run: |
+          npm run build:data
+          git diff --exit-code app/_worker.js || (echo "::error::_worker.js no está al día. Corre 'npm run build:data' y haz commit." && exit 1)
+      - name: Pruebas del servidor
+        run: npm test

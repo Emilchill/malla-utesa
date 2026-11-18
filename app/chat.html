@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="utesa">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
+<meta name="darkreader-lock">
+<meta name="theme-color" content="#00542B">
+<meta name="description" content="Comunidad de Malla UTESA: chat general y chat privado de tu carrera.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2300542B'/%3E%3Cpath d='M16 46V20h6l10 14 10-14h6v26h-6V30L32 44 22 30v16z' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Comunidad · Malla UTESA</title>
+<script>
+/* Tema guardado: se aplica antes de pintar para que la pantalla de carga respete los colores elegidos */
+(function () {
+  try {
+    var t = localStorage.getItem("malla_theme") || "utesa";
+    var bar = { utesa: "#00542B", medianoche: "#0B1220", atardecer: "#E85D2C", oceano: "#0E7C86", violeta: "#150F26", coral: "#E23F63" };
+    if (!bar[t]) t = "utesa";
+    document.documentElement.setAttribute("data-theme", t);
+    var dark = t === "medianoche" || t === "violeta";
+    var cs = document.querySelector('meta[name="color-scheme"]'); if (cs) cs.setAttribute("content", dark ? "dark" : "only light");
+    var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", bar[t]);
+  } catch (e) { /* sin almacenamiento: se queda el tema por defecto */ }
+})();
+</script>
+<link rel="stylesheet" href="css/style.css?v=20261227">
+</head>
+<body>
+
+  <div id="loader" class="full-loader">
+    <div class="spinner-lg"></div>
+    <p class="muted" style="font-size:13.5px;">Entrando a la comunidad…</p>
+  </div>
+
+  <div id="app" class="chat-page hidden">
+    <header class="chat-top">
+      <a class="chat-back" href="dashboard.html" aria-label="Volver a mi malla">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+        Mi malla
+      </a>
+      <h1>Comunidad</h1>
+      <button type="button" class="chat-bell" id="chat-bell" aria-pressed="true"></button>
+      <span id="chat-me" aria-hidden="true"></span>
+    </header>
+
+    <div id="chat-root"></div>
+  </div>
+
+  <script type="module" src="js/chat.js?v=20261227"></script>
+</body>
+</html>

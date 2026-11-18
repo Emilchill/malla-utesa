@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="utesa">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
+<meta name="darkreader-lock">
+<meta name="theme-color" content="#00542B">
+<meta name="description" content="Tu malla curricular de UTESA: avance, mapa de requisitos y gráficos.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2300542B'/%3E%3Cpath d='M16 46V20h6l10 14 10-14h6v26h-6V30L32 44 22 30v16z' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mi Malla · Malla UTESA</title>
+<script>
+/* Tema guardado: se aplica antes de pintar para que la pantalla de carga respete los colores elegidos */
+(function () {
+  try {
+    var t = localStorage.getItem("malla_theme") || "utesa";
+    var bar = { utesa: "#00542B", medianoche: "#0B1220", atardecer: "#E85D2C", oceano: "#0E7C86", violeta: "#150F26", coral: "#E23F63" };
+    if (!bar[t]) t = "utesa";
+    document.documentElement.setAttribute("data-theme", t);
+    var dark = t === "medianoche" || t === "violeta";
+    var cs = document.querySelector('meta[name="color-scheme"]'); if (cs) cs.setAttribute("content", dark ? "dark" : "only light");
+    var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute("content", bar[t]);
+  } catch (e) { /* sin almacenamiento: se queda el tema por defecto */ }
+})();
+</script>
+<link rel="stylesheet" href="css/style.css?v=20261227">
+</head>
+<body>
+
+  <!-- Loader mientras se verifica la sesión -->
+  <div id="loader" class="full-loader">
+    <div class="spinner-lg"></div>
+    <p class="muted" style="font-size:13.5px;">Cargando tu malla…</p>
+  </div>
+
+  <div id="app" class="hidden">
+    <!-- Encabezado que solo aparece al imprimir -->
+    <div class="print-header" id="print-header" aria-hidden="true"></div>
+
+    <header class="dash-header">
+      <div class="dash-header-inner">
+        <a class="app-brand" href="dashboard.html" aria-label="Malla UTESA, inicio">
+          <span class="app-mark" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="5" height="5" rx="1"></rect><rect x="3" y="16" width="5" height="5" rx="1"></rect><rect x="16" y="9.5" width="5" height="5" rx="1"></rect><path d="M8 5.5h3.5v13H8M11.5 12H16"></path></svg>
+          </span>
+          <span class="app-name">Malla UTESA</span>
+        </a>
+
+        <div class="user-menu-wrap">
+          <button type="button" class="user-chip" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu" aria-label="Menú de tu cuenta">
+            <span class="user-avatar" id="user-avatar" aria-hidden="true"></span>
+            <span class="user-chip-text">
+              <span class="user-name" id="hi-name">Hola</span>
+              <span class="user-sub" id="hi-career">—</span>
+            </span>
+            <svg class="user-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+
+          <div class="user-menu" id="user-menu" role="menu" aria-labelledby="user-menu-btn" hidden>
+            <div class="user-menu-head">
+              <strong id="um-name"></strong>
+              <span id="um-career"></span>
+              <span class="um-sync" id="um-sync"></span>
+            </div>
+            <button type="button" class="menu-item" role="menuitem" id="btn-utesa">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.3 12.5 3.5 3.5 0 0 0 6.5 19h11Z"></path><path d="M12 11v6"></path><path d="m9.5 14.5 2.5 2.5 2.5-2.5"></path></svg>
+              <span>Vincular con UTESA</span>
+            </button>
+            <a class="menu-item" role="menuitem" href="chat.html" id="btn-community">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>
+              <span>Comunidad</span>
+            </a>
+            <button type="button" class="menu-item" role="menuitem" id="btn-settings">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+              <span>Configuración</span>
+            </button>
+            <div class="menu-sep" role="separator"></div>
+            <button type="button" class="menu-item" role="menuitem" id="btn-theme" aria-haspopup="true" aria-expanded="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.2-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.4-4-8-10-8Z"></path></svg>
+              <span>Tema de color</span>
+            </button>
+            <button type="button" class="menu-item" role="menuitem" id="btn-compare" aria-haspopup="true" aria-expanded="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>
+              <span>Comparar carreras</span>
+            </button>
+            <button type="button" class="menu-item" role="menuitem" id="btn-print">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              <span>Imprimir mi malla</span>
+            </button>
+            <a class="menu-item" role="menuitem" id="btn-download" href="#" download>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Descargar mi pénsum (PDF)</span>
+            </a>
+            <div class="menu-sep" role="separator"></div>
+            <button type="button" class="menu-item menu-danger" role="menuitem" id="btn-logout">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Popover de comparación de carreras -->
+      <div class="theme-pop compare-pop" id="compare-pop">
+        <div class="title">Comparar carreras</div>
+        <div id="compare-table-container"></div>
+      </div>
+
+      <!-- Popover de temas -->
+      <div class="theme-pop" id="theme-pop">
+        <div class="title">Tema de color</div>
+        <div id="theme-picker-container"></div>
+      </div>
+    </header>
+
+    <section class="dash-hero">
+      <div class="hero-grid">
+        <div class="card progress-card">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+            </svg>
+            <div class="ring-center">
+              <div class="pct" id="perc-txt">0%</div>
+              <div class="lbl">avance</div>
+            </div>
+          </div>
+          <div class="stat-line" id="perc-desc">Cargando…</div>
+        </div>
+
+        <div class="stats-row">
+          <div class="card stat-box">
+            <div class="num" id="stat-done">0</div>
+            <div class="lbl">Materias aprobadas</div>
+          </div>
+          <div class="card stat-box">
+            <div class="num" id="stat-pending">0</div>
+            <div class="lbl">Materias pendientes</div>
+          </div>
+          <div class="card stat-box">
+            <div class="num" id="stat-credits">0 / 0</div>
+            <div class="lbl">Créditos completados</div>
+            <div class="credits-bar-track"><div class="credits-bar-fill" id="credits-bar-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sincronización con UTESA -->
+    <section class="sync-wrap">
+      <div class="card sync-card" id="sync-panel"></div>
+    </section>
+
+    <!-- Modo manual: solo para cuentas sin vincular -->
+    <div class="select-mode-banner" id="select-mode-banner">
+      <div class="select-mode-banner-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 7 3 3 5-5"></path><path d="m3 17 3 3 5-5"></path><line x1="13" y1="8" x2="21" y2="8"></line><line x1="13" y1="18" x2="21" y2="18"></line></svg>
+      </div>
+      <div class="select-mode-banner-text">
+        <strong id="select-mode-title">Modo manual</strong>
+        <span id="select-mode-desc"></span>
+      </div>
+      <button class="btn btn-primary" id="btn-select-mode">Activar modo manual</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        <input class="input" type="text" id="search-input" placeholder="Buscar materia o clave (ej. IEL-300)">
+      </div>
+      <div class="seg" id="view-switch" role="group" aria-label="Vista">
+        <button class="seg-btn" data-view="malla">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="5" height="5" rx="1"></rect><rect x="3" y="11" width="5" height="5" rx="1"></rect><rect x="16" y="7" width="5" height="5" rx="1"></rect><rect x="16" y="15" width="5" height="5" rx="1"></rect><path d="M8 5.5h3.5v4H16M8 13.5h3.5v4H16"></path></svg>
+          <span>Malla</span>
+        </button>
+        <button class="seg-btn" data-view="charts">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6" rx=".5"></rect><rect x="12" y="8" width="3" height="10" rx=".5"></rect><rect x="17" y="5" width="3" height="13" rx=".5"></rect></svg>
+          <span>Gráficos</span>
+        </button>
+        <button class="seg-btn" data-view="cards">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+          <span>Tarjetas</span>
+        </button>
+      </div>
+      <div class="filter-chips" id="filter-chips">
+        <button class="chip chip-active" data-filter="all">Todas</button>
+        <button class="chip" data-filter="done">Aprobadas</button>
+        <button class="chip" data-filter="pending">Pendientes</button>
+        <button class="chip" data-filter="electivas">Electivas</button>
+      </div>
+    </div>
+
+    <main class="malla-wrap" id="malla-content"></main>
+
+    <footer class="page-footer">
+      Malla UTESA es un proyecto independiente hecho por estudiantes para estudiantes.<br>
+      Los datos del pensum corresponden a la Resolución No. 104-22 (enero 2023) y pueden cambiar — verifica siempre la información oficial con tu coordinación de carrera.
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Panel de detalle de materia -->
+  <aside class="detail-sheet card" id="detail-sheet" aria-live="polite"></aside>
+
+  <!-- Bienvenida: vincular la cuenta con UTESA (primera vez o sin vincular) -->
+  <div class="modal-overlay hidden" id="link-overlay">
+    <div class="card modal-box link-box" role="dialog" aria-modal="true" aria-labelledby="link-title">
+      <div class="link-badge" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"></path><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"></path></svg>
+      </div>
+      <h3 id="link-title">Vincula tu cuenta de UTESA</h3>
+      <p class="link-lead">Así tu malla se llena sola con tu avance real.</p>
+      <ul class="link-list">
+        <li><span>✓</span> Trae tus materias aprobadas desde el portal de UTESA</li>
+        <li><span>✓</span> Inicia sesión con tu matrícula de UTESA (tu contraseña no se guarda)</li>
+        <li><span>✓</span> Se actualiza con un clic cada cuatrimestre</li>
+      </ul>
+      <button class="btn btn-primary link-main" data-link-go>Vincular con UTESA</button>
+      <button class="btn btn-ghost link-alt" data-link-manual>Prefiero marcar a mano</button>
+      <p class="link-note">El modo manual solo está disponible mientras tu cuenta no esté vinculada.</p>
+    </div>
+  </div>
+
+  <!-- Modal: vincular con UTESA -->
+  <div class="modal-overlay hidden" id="utesa-overlay">
+    <div class="card modal-box utesa-box" role="dialog" aria-modal="true" aria-labelledby="utesa-title">
+      <div class="modal-head">
+        <h3 id="utesa-title">Vincular con UTESA</h3>
+        <button class="icon-btn" id="utesa-close" data-modal-close title="Cerrar" aria-label="Cerrar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div data-step="intro">
+        <p class="utesa-lead">Trae tu avance real desde el <strong>portal estudiantil de UTESA</strong>. Solo se lee tu lista de materias: <strong>no se guardan tus notas ni tu contraseña</strong>.</p>
+        <p class="muted utesa-last" id="utesa-last"></p>
+
+        <form class="utesa-login" id="utesa-login-form" autocomplete="off" novalidate>
+          <div class="st-title">Inicia sesión con tu cuenta de UTESA <span class="tag-soft">más rápido</span></div>
+          <div class="ul-grid">
+            <div class="field">
+              <label class="field-label" for="ul-recinto">Recinto</label>
+              <div class="select-wrap">
+                <select class="input" id="ul-recinto" required>
+                  <option value="" selected disabled>Elige tu recinto…</option>
+                  <option value="UTSAN">Santiago · Sede</option>
+                  <option value="UTSDG">Santo Domingo</option>
+                  <option value="UTSDO">Santo Domingo Oriental</option>
+                  <option value="UTDJB">Dajabón</option>
+                  <option value="UTGHD">Gaspar Hernández</option>
+                  <option value="UTMAO">Mao</option>
+                  <option value="UTMOC">Moca</option>
+                  <option value="UTPPT">Puerto Plata</option>
+                  <option value="UTGRS">Santiago · Escuela de Graduados</option>
+                  <option value="UTGRD">Santo Domingo · Escuela de Graduados</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="ul-matricula">Matrícula</label>
+              <input class="input" id="ul-matricula" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ej. 1-00-0000" maxlength="14">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="ul-pass">Contraseña de UTESA</label>
+            <div class="ul-pass">
+              <input class="input" id="ul-pass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="La misma que usas en utesa.edu" maxlength="128">
+              <button type="button" class="ul-eye" id="ul-eye" aria-pressed="false" aria-label="Mostrar contraseña">Mostrar</button>
+            </div>
+          </div>
+          <label class="set-check ul-consent">
+            <input type="checkbox" id="ul-consent">
+            <span>Entiendo que mi matrícula y contraseña se envían cifradas a un servidor de esta app <b>solo para iniciar sesión en UTESA y leer mi avance</b>. No se guardan ni se comparten.</span>
+          </label>
+          <div class="err-box" id="ul-error" role="alert"></div>
+          <button type="submit" class="btn btn-primary ul-submit" id="ul-submit">Vincular con mi cuenta de UTESA</button>
+        </form>
+
+        <details class="utesa-alt" id="utesa-alt">
+          <summary>Prefiero no dar mi contraseña aquí</summary>
+          <p class="utesa-alt-note">Puedes enviar tu avance desde el propio portal de UTESA, con un marcador o copiando y pegando. Tu contraseña se queda solo en utesa.edu.</p>
+          <button type="button" class="btn btn-ghost btn-sm utesa-video-btn" data-open-video>▶ Ver video tutorial (1 min)</button>
+          <ol class="utesa-steps">
+            <li>
+              <div class="st-title">Entra al portal de UTESA</div>
+              <p>En utesa.edu toca <em>Acceso → Estudiantes</em>, elige tu recinto e inicia sesión con tu matrícula.</p>
+              <a class="btn btn-primary btn-sm" id="utesa-open-portal" href="https://www.utesa.edu/home/index.php" target="_blank" rel="noopener">Abrir portal UTESA ↗</a>
+            </li>
+            <li>
+              <div class="st-title">Envía tu avance con un clic</div>
+              <p>Guarda este botón en tu barra de marcadores (en la computadora, arrástralo; en el teléfono, guarda esta página como marcador y edita su dirección). Luego, dentro del panel de UTESA, tócalo: tu avance llega aquí solo.</p>
+              <p class="utesa-tip"><b>¿No ves la barra de marcadores?</b> Actívala con <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> (en Mac: <kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd>) o desde el menú ⋮ → Marcadores → Mostrar barra de marcadores.</p>
+              <a class="bookmarklet" id="utesa-bookmarklet" href="#">📥 Enviar a Malla UTESA</a>
+            </li>
+            <li>
+              <div class="st-title">…o copia y pega</div>
+              <p>En <em>Asignaturas pendientes</em> selecciona todo (<kbd>Ctrl</kbd>+<kbd>A</kbd>), copia (<kbd>Ctrl</kbd>+<kbd>C</kbd>) y pégalo aquí:</p>
+              <textarea class="input utesa-paste" id="utesa-paste" rows="4" placeholder="Pega aquí el contenido de la página Asignaturas pendientes…"></textarea>
+              <button class="btn btn-primary" id="utesa-analyze" style="margin-top:10px;">Detectar materias</button>
+            </li>
+          </ol>
+        </details>
+
+        <details class="utesa-why">
+          <summary>¿Qué pasa con mi contraseña?</summary>
+          <p>Viaja por una conexión cifrada (HTTPS) hasta una función del servidor de esta app, que inicia sesión en el portal de UTESA por ti, lee tu lista de materias pendientes y cierra la sesión. No se guarda en ninguna base de datos ni en registros, y nunca vuelve a tu navegador. UTESA no ofrece un “Iniciar sesión con UTESA” para apps externas; por eso existe la opción de usar el marcador o copiar y pegar.</p>
+        </details>
+      </div>
+
+      <div data-step="review" class="hidden">
+        <p class="utesa-lead" id="utesa-summary"></p>
+        <div class="imp-list" id="utesa-results"></div>
+        <div class="utesa-actions">
+          <button class="btn btn-ghost" id="utesa-back">Volver</button>
+          <button class="btn btn-primary" id="utesa-apply">Marcar como aprobadas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra flotante del modo manual -->
+  <div class="batch-bar hidden" id="batch-bar">
+    <span id="batch-count">0 materias seleccionadas</span>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-ghost" id="batch-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="batch-confirm">Confirmar y aplicar</button>
+    </div>
+  </div>
+
+  <!-- Configuración -->
+  <div class="modal-overlay hidden" id="settings-overlay">
+    <div class="card modal-box settings-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-head">
+        <h3 id="settings-title">Configuración</h3>
+        <button class="icon-btn" data-modal-close title="Cerrar" aria-label="Cerrar configuración"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+
+      <section class="set-card set-profile">
+        <div class="set-avatar" id="set-avatar" aria-hidden="true"></div>
+        <div class="set-profile-info">
+          <strong id="set-profile-name"></strong>
+          <span class="muted" id="set-profile-email"></span>
+          <span class="set-career-chip" id="set-profile-career"></span>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" id="set-avatar-toggle" aria-expanded="false" aria-controls="avatar-editor">Personalizar</button>
+      </section>
+      <section class="set-card set-editor" id="avatar-editor" hidden aria-label="Creador de personaje">
+        <div id="avatar-host"></div>
+        <div class="set-row set-editor-foot">
+          <button type="button" class="btn btn-ghost" id="avatar-cancel">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="avatar-save" disabled>Guardar personaje</button>
+        </div>
+      </section>
+
+      <section class="set-card">
+        <h4 class="set-title">Nombre</h4>
+        <div class="set-row">
+          <input class="input" type="text" id="set-name-in" placeholder="Tu nombre completo" autocomplete="name" maxlength="60" aria-label="Tu nombre">
+          <button class="btn btn-primary" id="set-name-save">Guardar</button>
+        </div>
+        <div class="err-box" id="set-name-msg"></div>
+      </section>
+
+      <section class="set-card" id="rank-section">
+        <h4 class="set-title">Tu rango</h4>
+        <div id="set-rank"></div>
+      </section>
+
+      <section class="set-card" id="frames-section">
+        <h4 class="set-title">Marcos y logros</h4>
+        <p class="set-text" id="set-frames-intro"></p>
+        <div class="fr-equipped" id="set-frames-equipped"></div>
+        <div class="ach-filter" id="set-frames-filter" role="group" aria-label="Filtrar logros">
+          <button type="button" class="chip is-on" data-ff="all">Todos</button>
+          <button type="button" class="chip" data-ff="earned">Ganados</button>
+          <button type="button" class="chip" data-ff="locked">Por ganar</button>
+        </div>
+        <div class="ach-grid" id="set-frames-grid"></div>
+      </section>
+
+      <section class="set-card">
+        <h4 class="set-title">Chat de la comunidad</h4>
+        <label class="set-switch"><input type="checkbox" id="set-chat-notif"><span class="set-switch-ui" aria-hidden="true"></span><span>Sonido y avisos de mensajes nuevos</span></label>
+        <p class="set-text" style="margin-top:8px">Suena un "plin" suave cuando escribe otra persona. Si dejas la pestaña abierta, también puede salir un aviso del navegador.</p>
+        <label class="set-switch" style="margin-top:14px"><input type="checkbox" id="set-show-online"><span class="set-switch-ui" aria-hidden="true"></span><span>Mostrar cuando estoy en línea</span></label>
+        <p class="set-text" style="margin-top:8px">Tus amigos ven un punto verde cuando estás usando la app. Si lo apagas, tampoco verás el de los demás.</p>
+        <label class="set-switch" style="margin-top:14px"><input type="checkbox" id="set-dir-visible"><span class="set-switch-ui" aria-hidden="true"></span><span>Aparecer en la lista de estudiantes</span></label>
+        <p class="set-text" style="margin-top:8px">Si lo apagas, nadie te encuentra en «Ver estudiantes» (tus amigos y quienes ya te escribieron te siguen viendo). Puedes seguir agregando gente.</p>
+      </section>
+
+      <section class="set-card">
+        <h4 class="set-title">Contacto: reportes, errores y sugerencias</h4>
+        <p class="set-text">¿Algo no funciona, viste algo que no debería estar o tienes una idea para mejorar la app? Escríbele directamente al creador por WhatsApp. El mensaje ya viene empezado: solo cuéntanos qué pasó.</p>
+        <a class="btn btn-primary wa-btn" href="https://wa.me/18296422334?text=Hey%2C%20vengo%20del%20proyecto%20Malla%20UTESA%20y%20me%20gustar%C3%ADa%20reportar%20o%20sugerir%20algo%3A%20" target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.500-.7-1.700-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.700 6.700 0 0 1-3.300-2.900c-.2-.4.2-.4.700-1.300.1-.2 0-.3 0-.4l-.8-1.800c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.200 5.100 5.100 0 0 0 1.100 2.700 11.700 11.700 0 0 0 4.500 4c1.700.7 2.300.8 3.200.7a2.700 2.700 0 0 0 1.800-1.300 2.200 2.200 0 0 0 .2-1.300c-.1-.1-.3-.2-.5-.3z"/></svg><span>Escribir por WhatsApp</span></a>
+        <p class="set-text" style="margin-top:8px">Es un proyecto estudiantil: respondemos en cuanto podemos. Tu número de teléfono solo lo ve quien te lea en WhatsApp.</p>
+      </section>
+
+      <section class="set-card">
+        <h4 class="set-title">Tema de color</h4>
+        <div class="set-theme" id="set-theme"></div>
+      </section>
+
+      <section class="set-card">
+        <h4 class="set-title">Cuenta de UTESA</h4>
+        <p class="set-text" id="set-utesa-status"></p>
+        <div class="set-row set-actions" id="set-utesa-actions"></div>
+      </section>
+
+      <section class="set-card" id="pw-section"></section>
+
+      <section class="set-card set-danger">
+        <h4 class="set-title">Carrera y progreso</h4>
+        <div class="select-wrap">
+          <span class="select-badge" id="set-career-badge">?</span>
+          <select class="input" id="set-career-select" aria-label="Tu carrera"></select>
+          <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <p class="select-hint" id="set-career-hint"></p>
+        <button type="button" class="btn btn-ghost btn-sm set-reset" id="set-reset-progress">Reiniciar mi progreso</button>
+      </section>
+
+      <button type="button" class="btn btn-ghost set-logout" id="set-logout">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- Confirmación de cambio de carrera -->
+  <div class="modal-overlay hidden" id="career-confirm-overlay">
+    <div class="card modal-box" role="alertdialog" aria-modal="true" aria-labelledby="career-confirm-title" style="max-width:440px;">
+      <h3 id="career-confirm-title" style="margin-top:0;">¿Cambiar a <span id="career-confirm-name"></span>?</h3>
+      <p class="muted" style="font-size:14px; line-height:1.6;">
+        Se borrará permanentemente tu progreso actual
+        (<strong id="career-confirm-count">0</strong> materias marcadas) y comenzarás desde cero en el nuevo pénsum.
+        Esta acción <strong>no se puede deshacer</strong>.
+      </p>
+      <div style="display:flex; gap:10px; margin-top:18px;">
+        <button class="btn btn-ghost" data-modal-close style="flex:1;">Cancelar</button>
+        <button class="btn btn-danger" id="career-confirm-ok" style="flex:1;">Sí, borrar y cambiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video tutorial -->
+  <div class="modal-overlay hidden" id="video-overlay">
+    <div class="card modal-box video-box" role="dialog" aria-modal="true" aria-labelledby="video-title">
+      <div class="modal-head">
+        <h3 id="video-title">Cómo vincular con UTESA</h3>
+        <button class="icon-btn" id="video-close" data-modal-close title="Cerrar" aria-label="Cerrar video">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <iframe id="tuto-video" title="Tutorial: cómo vincular con UTESA" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <p class="video-note">Dura 1 minuto y tiene música. Incluye cómo activar la barra de marcadores si la tienes oculta.
+        <a href="https://youtu.be/_na57-Qsmy0" target="_blank" rel="noopener">Verlo en YouTube ↗</a></p>
+    </div>
+  </div>
+
+  <script type="module" src="js/dashboard.js?v=20261227"></script>
+</body>
+</html>

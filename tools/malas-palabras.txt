@@ -1,0 +1,143 @@
+# Lista de palabras que el chat enmascara con asteriscos (*****).
+# - Una por línea. Las líneas que empiezan con # son comentarios.
+# - Escríbelas en minúscula. Los acentos no importan (cabrón = cabron), la ñ sí (coño ≠ cono).
+# - Una * al final significa "y todo lo que empiece así" (puta* cubre puta, putas, putada, putazo…).
+# - Se detectan también trucos comunes: mayúsculas, letras repetidas (puuuta), números por letras (m1erda),
+#   @ y $ por letras (c@brón) y letras separadas (p u t a).
+# - Para agregar o quitar palabras: edita este archivo y ejecuta `node tools/build-worker-data.mjs`, luego sube la web.
+# - Palabras que NO deben bloquearse aunque empiecen igual: ver SAFE_WORDS en el final de este archivo (líneas con "ok:").
+
+# ---- Malas palabras comunes (español) ----
+puta*
+puto*
+putear
+hijueputa*
+hijoeputa*
+hijodeputa
+hdp
+mierda*
+mierdoso
+joder
+jodete
+jodas
+joda
+jodiste
+jodon*
+jodanse
+jodido*
+jodida*
+jodiendo
+jodienda
+coño*
+puñeta*
+puneta*
+puñetero*
+carajo*
+cabron*
+cabrona*
+pendejo*
+pendeja*
+gilipollas
+gilipolla
+imbecil*
+idiota*
+estupido*
+estupida*
+retrasado*
+retrasada*
+tarado*
+tarada*
+subnormal*
+mongolico*
+maricon*
+maricona*
+marica*
+marico*
+zorra*
+malparido*
+malparida*
+gonorrea
+cagar
+cagada*
+cagon*
+cago
+verga
+vergas
+vergazo*
+pinga
+pingas
+pingazo*
+culo
+culos
+culiao
+culiado
+chingar*
+chinga*
+chingada*
+chingon*
+chingue*
+pajero*
+pajera*
+mamabicho*
+mamaguevo*
+mamahuevo*
+guevo*
+guevon*
+huevon*
+ctm
+ptm
+csm
+
+# ---- Dominicanas ----
+rmtm
+mmg
+mmñ
+mmgv
+nema
+ñema*
+mamañema*
+mamanema*
+singao*
+singar*
+singate
+singona*
+singaera*
+pajuo*
+pajua*
+pariguayo*
+pariguaya*
+mardito*
+mardita*
+tigueraje
+bellaquear
+lambeculo*
+lambon*
+
+# ---- Inglés (se oyen mucho en el chat) ----
+fuck*
+fck
+fuk
+shit*
+bitch*
+asshole*
+motherfucker*
+bastard*
+pussy
+dick
+cunt
+slut
+whore
+
+# ---- Excepciones ----
+# "ok:palabra" = no se enmascara ella ni sus variantes con letras repetidas.
+# "exacto:palabra" = solo esa forma EXACTA (útil si una abreviatura mala, como mmg, se parece a una normal, como mg).
+exacto:mg
+exacto:mm
+ok:putativo
+ok:putativa
+ok:shitake
+ok:shiitake
+ok:cuerpo
+ok:cuerda
+ok:cuerdas
+ok:cuerdo
