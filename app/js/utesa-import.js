@@ -122,7 +122,7 @@ export function analyzePayload(text, pensum) {
     [...pending].filter(c => !byCode.has(c)).forEach(c => foreign.add(c));
     if (known.length / pending.size < 0.6) {
       return { modo, found: [], foreign: [...foreign],
-        error: `Tus pendientes en UTESA no coinciden con el pensum de <strong>${pensum.nombre}</strong>${meta.CARRERA ? ` (UTESA dice: ${meta.CARRERA})` : ""}. Cambia tu carrera en Configuración y vuelve a sincronizar.` };
+        error: `Tus pendientes en UTESA no coinciden con el pensum de <strong>${pensum.nombre}</strong>${meta.CARRERA ? ` (UTESA dice: ${esc(String(meta.CARRERA).slice(0, 80))})` : ""}. Cambia tu carrera en Configuración y vuelve a sincronizar.` };
     }
     // Aprobadas = materias del pensum con clave oficial que NO están pendientes
     cuatSubjects(pensum).forEach(m => {
