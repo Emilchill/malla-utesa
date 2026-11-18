@@ -384,6 +384,10 @@ r = await vcall(tok("ana"), { pending: pendAll, counts: { aprob: 6, insc: 0, pen
 ok("contadores que no cuadran con la lista -> 400", r[0] === 400 && r[1].code === "contadores", r);
 r = await vcall(tok("ana"), { pending: [] });
 ok("lista vacía sospechosa -> 400", r[0] === 400, r);
+r = await vcall(tok("dan"), { pending: [], counts: { aprob: 243, insc: 0, pend: 0 } });
+ok("lista vacía con contadores en 0 (falsificación de 100 %) -> 400", r[0] === 400 && r[1].code === "sospechoso", r);
+r = await call("GET", "/api/user", tok("dan"));
+ok("... y no queda verificado ni gana logros", !r[1].user.verifiedAt && r[1].user.earned.length === 0 && r[1].user.pct === null, { v: r[1].user.verifiedAt, e: r[1].user.earned.length, pct: r[1].user.pct });
 const derCodes = PENSUMS.DER.cuatrimestres.flatMap(c => c.materias.map(m => m.c)).filter(c => /^[A-Z]{2,4}-\d{3}$/.test(c));
 const before = (await call("GET", "/api/user", tok("ana")))[1].user.earned.length;
 r = await vcall(tok("ana"), { pending: derCodes });

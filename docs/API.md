@@ -23,7 +23,7 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 | Método y ruta | Descripción |
 |---|---|
 | `POST /api/utesa-login` | `{ matricula, recinto, password }`. Inicia sesión en UTESA **en memoria**, lee pendientes y contadores y cierra sesión. Devuelve `{ carrera, pensum, counts, pending[], verified? }`. Límite: 5 intentos/15 min por matrícula y 20/h por IP (en memoria, mejor esfuerzo). |
-| `POST /api/utesa-verify` | `{ pending[], counts{aprob,insc,pend} }`. Verifica con la lista del **marcador** (ver `docs/ARCHITECTURE.md`). `400 contadores|sospechoso`, `409 retroceso`, `429`. Marca `verified_src = 'bookmark'`. |
+| `POST /api/utesa-verify` | `{ pending[], counts{aprob,insc,pend} }`. Verifica con la lista del **marcador** (ver `docs/ARCHITECTURE.md`). `400 contadores|sospechoso` (también si `pending` viene vacío), `409 retroceso`, `429`. Marca `verified_src = 'bookmark'`. |
 
 ## Chat
 

@@ -1130,7 +1130,9 @@ async function verifyApi(request, env) {
   const c = body.counts && typeof body.counts === "object" ? body.counts : {};
   const num = (v) => (Number.isInteger(v) && v >= 0 && v < 1000 ? v : null);
   const cp = num(c.pend), ci = num(c.insc);
-  if (!pend.length && cp !== 0) return fail(400, "sospechoso", "La lista de pendientes llegó vacía mientras UTESA indica que aún faltan materias.");
+  // una lista vacía (aunque venga con contadores en 0) sería declararse con la carrera 100 % terminada y ganar todos los logros
+  // sin ninguna prueba: el marcador no la acepta. Quien de verdad terminó la carrera puede vincular con matrícula (inicio directo).
+  if (!pend.length) return fail(400, "sospechoso", "La lista de pendientes llegó vacía. Si ya terminaste tu carrera, vincula con tu matrícula (inicio de sesión directo) para verificarla.");
   // los contadores de UTESA deben cuadrar con la lista (pendientes + las que cursas ahora)
   if (cp !== null && Math.abs(pend.length - (cp + (ci || 0))) > 6) return fail(400, "contadores", "La lista no coincide con los contadores del portal. Vuelve a tocar el marcador dentro de UTESA.");
   const r = computeEarned(row.career, pend);

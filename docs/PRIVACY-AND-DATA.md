@@ -32,6 +32,7 @@ El dueño del proyecto (quien administra Cloudflare) tiene acceso técnico a tod
    El portal de UTESA, además, recibe la contraseña en la URL con un codificado trivial (así funciona su propio sitio) y puede registrarla.
 3. **Verificación por marcador falsificable.** Un estudiante técnico podría fabricar una lista. Controles: carrera coincidente, contadores coherentes,
    avance que no retrocede, límite de intentos, y etiqueta visible "Verificado con marcador".
+   **Mitigado 2026-11-18:** una lista **vacía** (declararse con la carrera 100 % terminada, incluso con contadores en 0) ya no se acepta por marcador; quien terminó la carrera verifica con matrícula (inicio directo). **Sigue siendo posible** que alguien con conocimientos técnicos fabrique una lista con pocas materias pendientes: no se puede evitar sin leer UTESA desde el servidor. Por eso la etiqueta «Verificado con marcador» se muestra siempre.
 4. **No es oficial.** UTESA podría objetar el uso de credenciales en un sitio de terceros o bloquear el acceso. No hay permiso institucional.
 5. **Límite en memoria**: los límites de velocidad del login/verificación se pierden al reciclarse el worker.
 6. **Firebase `apiKey` pública**: está en `app/js/firebase-config.js`. Es la configuración **web** de Firebase, pública por diseño (la
