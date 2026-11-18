@@ -23,7 +23,17 @@ r = await call("GET", "/api/user", tok("ana"));
 ok("GET muestra frame y earned", r[1].user.frame === "MAT-360" && r[1].user.earned.length > 3, r[1].user);
 
 r = await call("POST", "/api/utesa-login", null, { matricula: "1000000", recinto: "UTSAN", password: "x" }, "3.3.3.3");
-ok("login sin token: ok pero sin logros", r[0] === 200 && r[1].verified === null, r);
+ok("login sin token -> 401 (no sirve de intermediario sin sesión de la app)", r[0] === 401 && r[1].code === "sesion", r);
+r = await call("POST", "/api/utesa-login", "token-falso", { matricula: "1000000", recinto: "UTSAN", password: "x" }, "3.3.3.4");
+ok("login con token inválido -> 401", r[0] === 401 && r[1].code === "sesion", r);
+{
+  let n429 = 0, calls = 0; // límite por cuenta: 10 intentos por hora aunque cambien matrícula e IP
+  for (let i = 0; i < 12; i++) {
+    const x = await call("POST", "/api/utesa-login", tok("hugo"), { matricula: String(5000000 + i), recinto: "UTSAN", password: "x" }, "6.6." + i + ".1");
+    calls++; if (x[0] === 429) n429++;
+  }
+  ok("límite por cuenta: tras 10 intentos/hora responde 429", calls === 12 && n429 === 2, { calls, n429 });
+}
 r = await call("POST", "/api/utesa-login", tok("cat"), { matricula: "2000000", recinto: "UTSAN", password: "x" }, "4.4.4.4");
 ok("DER vinculando pensum ISC -> sin logros", r[0] === 200 && r[1].verified.mismatch === true && r[1].verified.earned.length === 0, r[1].verified);
 await call("PUT", "/api/user", tok("ana"), { fields: { career: "IEL" } });

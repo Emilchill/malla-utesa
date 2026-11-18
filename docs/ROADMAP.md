@@ -3,7 +3,8 @@
 Lista viva. Marca con [x] lo que se complete y muévelo a `CHANGELOG-FEATURES.md`. Pensada también como menú de tareas para amigos e IAs.
 
 ## Seguridad y confiabilidad (prioridad alta)
-- [ ] **Exigir sesión en `/api/utesa-login`** (hoy acepta peticiones sin token) para que no sirva de intermediario a quien no tenga cuenta.
+- [x] **Exigir sesión en `/api/utesa-login`** (hecho 2026-11-18: token de Firebase obligatorio + 10 intentos/hora por cuenta). Pendiente: valorar eliminar el endpoint si ya no se usa.
+- [ ] **Activar la CSP completa**: hoy `app/_headers` la tiene en modo informe (`Content-Security-Policy-Report-Only`). Revisa la consola del navegador (login con Google y correo, chat, video del tutorial) y, si no hay avisos, cámbiale el nombre a `Content-Security-Policy`. Idealmente quitar los scripts y estilos en línea (`onclick=`, `<script>` del tema) para prescindir de `unsafe-inline`.
 - [ ] **Límite de intentos persistente** (D1 o regla de Cloudflare) en lugar de memoria del worker, para login y verificación.
 - [ ] Turnstile (captcha de Cloudflare) en el inicio de sesión directo.
 - [ ] Botón "desvincular y borrar mis datos" (borrar `verified_*`, `done`, `earned`) y aviso de consentimiento más claro.

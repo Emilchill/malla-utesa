@@ -33,6 +33,14 @@ Las variables y el binding están en **Cloudflare → Workers y Pages → malla-
 No hay `wrangler.toml`: manda la configuración del panel. Los cambios de variables/bindings se aplican en el **siguiente despliegue**
 (haz un commit o *Retry deployment*).
 
+## Cabeceras de seguridad
+
+[`app/_headers`](../app/_headers) las aplica Cloudflare a los **archivos estáticos** (no a `/api/*`, que pone las suyas desde el worker):
+`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y una CSP mínima (`frame-ancestors 'none'`, `object-src`, `base-uri`, `form-action`).
+La CSP completa está **solo en modo informe** (`Content-Security-Policy-Report-Only`): no bloquea nada, pero el navegador avisa en su consola de lo que bloquearía.
+Antes de activarla revisa esos avisos con la app real. Una CSP mal hecha rompe el inicio de sesión de Firebase. `tests/headers.test.mjs` comprueba el formato.
+Compruébalo tras un despliegue con: `curl -sI https://malla-utesa.pages.dev/dashboard.html`.
+
 ## Conexión con GitHub
 
 * Cloudflare accede a GitHub mediante la app **Cloudflare Workers and Pages**, instalada **solo en el repo `Emilchill/malla-utesa`**

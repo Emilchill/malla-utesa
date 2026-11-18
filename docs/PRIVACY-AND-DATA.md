@@ -27,8 +27,7 @@ El dueño del proyecto (quien administra Cloudflare) tiene acceso técnico a tod
 
 ## Riesgos conocidos (ordenados)
 
-1. **El inicio directo no exige sesión de la app.** Cualquiera podría usar el worker como intermediario para probar contraseñas de UTESA
-   (limitado por IP y matrícula, pero el límite vive en memoria y se reinicia). *Mejora:* exigir token de Firebase y mover el límite a D1 (ver `ROADMAP.md`).
+1. **(Mitigado 2026-11-18)** El inicio directo ya exige sesión de la app (token de Firebase) y limita a 10 intentos por hora por cuenta. Aún queda el riesgo de que una cuenta de la app se use para probar contraseñas de UTESA: el límite por matrícula e IP vive en la memoria del worker y se reinicia. *Mejora:* mover el límite a D1 o a una regla de Cloudflare (ver `ROADMAP.md`).
 2. **La contraseña pasa por nuestro servidor.** Viaja cifrada (HTTPS), pero exige confiar en el operador del proyecto y en Cloudflare.
    El portal de UTESA, además, recibe la contraseña en la URL con un codificado trivial (así funciona su propio sitio) y puede registrarla.
 3. **Verificación por marcador falsificable.** Un estudiante técnico podría fabricar una lista. Controles: carrera coincidente, contadores coherentes,

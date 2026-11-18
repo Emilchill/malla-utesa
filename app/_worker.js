@@ -8,7 +8,7 @@
 //   · La contraseña vive solo en memoria durante la petición: no se guarda, no se registra
 //     (no hay console.log de datos del usuario) y nunca se devuelve en la respuesta.
 //   · Solo habla con https://www.utesa.edu (no sigue redirecciones a otros dominios).
-//   · Solo acepta peticiones POST del propio sitio (cabecera Origin = Host).
+//   · Solo acepta peticiones POST del propio sitio (cabecera Origin = Host) y con sesión de la app (token de Firebase).
 //   · Limita intentos por matrícula y por dirección IP para que no sirva para adivinar contraseñas.
 //     (El límite vive en memoria del Worker: es de mejor esfuerzo y se reinicia al reciclarse.)
 
@@ -128,6 +128,12 @@ async function login(request, env) {
     if (!origin || new URL(origin).host !== host) return fail(403, "origen", "Petición no permitida.");
   } catch { return fail(403, "origen", "Petición no permitida."); }
 
+  // hace falta una sesión de la app (token de Firebase): así el servidor no sirve de intermediario a quien no tiene cuenta
+  const authz = request.headers.get("authorization") || "";
+  const vuid = authz.startsWith("Bearer ") ? await verifyToken(authz.slice(7)) : null;
+  if (!vuid) return fail(401, "sesion", "Inicia sesión en la app para vincular con UTESA.");
+  if (limited(`lu:${vuid}`, 10, 60 * 60 * 1000)) return fail(429, "limite", "Demasiados intentos. Espera unos minutos antes de volver a intentar.");
+
   const raw = await request.text();
   if (raw.length > 2048) return fail(413, "entrada", "Datos demasiado largos.");
   let data;
@@ -166,8 +172,6 @@ async function login(request, env) {
     // Logros: solo con inicio de sesión directo y sesión de Firebase válida
     let verified = null;
     try {
-      const authz = request.headers.get("authorization") || "";
-      const vuid = authz.startsWith("Bearer ") ? await verifyToken(authz.slice(7)) : null;
       // una lista de pendientes vacía mientras UTESA dice que aún hay pendientes es sospechosa: no se otorgan logros
       const suspicious = pending.length === 0 && counts.pend !== 0;
       if (vuid && env.DB && !suspicious) {
