@@ -10,7 +10,7 @@ Lista viva. Marca con [x] lo que se complete y muévelo a `CHANGELOG-FEATURES.md
 - [ ] Botón "desvincular y borrar mis datos" (borrar `verified_*`, `done`, `earned`) y aviso de consentimiento más claro.
 - [ ] Valorar pedir el visto bueno de UTESA (el uso de credenciales de terceros).
 - [ ] Reportar mensajes con una ventana propia (hoy usa `prompt()` del navegador).
-- [ ] Reglas de Firestore: limitar por usuario la frecuencia de escritura de pings.
+- [ ] Firestore: cualquier cuenta autenticada puede escribir «pings» en cualquier `chatPing/*` e `inbox/{pid}` (las reglas publicadas el 2026-11-18 coinciden con `firebase/firestore.rules`). Impacto acotado: si alguien gasta la cuota gratuita de escrituras (20 000/día), los avisos en vivo dejan de llegar y el chat sigue por sondeo; los datos están en D1. Una regla de «1 escritura por segundo y documento» no garantiza quedar bajo la cuota; la mitigación real es **Firebase App Check** (reCAPTCHA) en la consola de Firebase.
 
 ## Chat y comunidad
 - [ ] Vista previa del último mensaje en la lista de chats.

@@ -43,3 +43,10 @@ El dueño del proyecto (quien administra Cloudflare) tiene acceso técnico a tod
 * *Credenciales filtradas* (token de Cloudflare/GitHub): revocar en el panel correspondiente, crear uno nuevo, actualizar el secreto de GitHub.
 * *Usuario abusivo*: reportar → moderador oculta → dueño elimina (`/api/users/delete`; queda baneado).
 * *Cuenta eliminada por error*: `DELETE FROM banned WHERE uid = '…'` en D1 (el perfil y los mensajes ya no se recuperan).
+
+## Firestore: avisos en vivo (revisado 2026-11-18)
+
+Las reglas **publicadas** en la consola de Firebase (proyecto `malla-curricular-38175`) son idénticas a `firebase/firestore.rules`. Solo hay tres colecciones:
+`users` (cada quien lee solo la suya, nadie escribe), `chatPing` e `inbox` (avisos `{ t: timestamp }`, sin contenido de mensajes). Cualquier cuenta autenticada
+puede escribir en cualquier `chatPing/*` válido e `inbox/{pid}`: no se filtra contenido (no hay), pero se puede gastar la cuota o hacer que el cliente de alguien
+refresque. El cliente trata un fallo de aviso como no crítico y sigue por sondeo. Mitigación recomendada: App Check.
