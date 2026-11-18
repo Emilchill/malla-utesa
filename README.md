@@ -31,7 +31,7 @@ git clone <URL-de-este-repositorio>
 cd malla-utesa
 npm run dev        # http://localhost:5190  (elige usuario en /dev.html)
 npm test           # pruebas del servidor
-npm run check      # revisa la sintaxis de todo el JavaScript
+npm run check      # sintaxis de todo el JavaScript + escaneo de secretos
 ```
 
 `npm run dev` levanta la app completa **sin Cloudflare, Firebase ni cuentas**: usa el servidor real (`app/_worker.js`) con una

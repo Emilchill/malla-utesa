@@ -28,8 +28,15 @@ Recomendado en la consola de Google Cloud: restringir la API key a los dominios 
 
 * **Nunca** hagas commit de `.env`, tokens, claves privadas, volcados de base de datos ni datos reales de estudiantes (el `.gitignore` bloquea los más comunes).
 * Si se filtra un secreto: **revocarlo primero**, luego crear uno nuevo y actualizar el secreto de GitHub. Borrar el commit no basta.
-* Las ramas protegidas (`main`) solo reciben cambios por Pull Request con el CI en verde.
-* El token de Cloudflare debe tener el **mínimo permiso** (Account › Cloudflare Pages › Edit) y rotarse si alguien con acceso deja el proyecto.
+* **`main` NO está protegido por GitHub**: en cuentas gratuitas GitHub no permite proteger ramas de repos privados (pide GitHub Pro).
+  Por eso la regla es **humana**: nadie hace push directo a `main`; todo entra por Pull Request con el CI en verde y la aprobación del dueño.
+  Quien tenga permiso de **escritura** puede saltarse esa regla y publicar en producción, y también puede editar `.github/workflows/`
+  y usar el token de Cloudflare. Por eso **solo el dueño tiene escritura**; los amigos entran como *Read* y colaboran con *fork* + Pull Request
+  (ver `CONTRIBUTING.md`). Si algún día hay GitHub Pro: activa protección de `main` (PR obligatorio + check `check-and-test`).
+* El token de Cloudflare (`github-actions-malla-utesa`) tiene el **mínimo permiso** (Account › Cloudflare Pages › Edit), pero **sin fecha de
+  vencimiento y para todas las cuentas** del dueño. Rótalo (ver `docs/DEPLOY.md`) si alguien con acceso deja el proyecto o si sospechas una filtración.
+* `npm run check:secrets` (también dentro de `npm run check` y del CI) escanea el repo buscando tokens y claves privadas conocidos.
+  Es una red de seguridad, no una garantía: revisa tú mismo lo que subes.
 * Dependencias: el proyecto casi no tiene (el worker y el frontend no usan paquetes); eso reduce mucho la superficie de ataque. Mantenlo así.
 
 ## Modelo de seguridad de la app (resumen)

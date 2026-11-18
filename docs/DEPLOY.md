@@ -33,12 +33,23 @@ En **GitHub → Settings → Secrets and variables → Actions** del repositorio
 | `CLOUDFLARE_API_TOKEN` | Token de API de Cloudflare con el permiso mínimo: **Account › Cloudflare Pages › Edit**. |
 | `CLOUDFLARE_ACCOUNT_ID` | El Account ID de la tabla anterior. |
 
-Los secretos de GitHub **no se pueden leer** una vez guardados (solo reemplazar). Para rotar: crea un token nuevo en Cloudflare
-(My Profile → API Tokens), actualiza el secreto y revoca el anterior.
+Los secretos de GitHub **no se pueden leer** una vez guardados (solo reemplazar).
+
+### Cómo rotar el token de Cloudflare (paso a paso)
+
+1. Cloudflare → My Profile → **API Tokens** → *Create Token* → *Create Custom Token* (empezar desde cero).
+2. Nombre `github-actions-malla-utesa`; política **Account › Cloudflare Pages › Edit**. Si puedes, limita *Account Resources* a la cuenta
+   de `malla-utesa` y ponle fecha de vencimiento (y apunta en `docs/ROADMAP.md` cuándo rotarlo).
+3. Copia el token (solo se muestra una vez) y guárdalo: `gh secret set CLOUDFLARE_API_TOKEN --repo Emilchill/malla-utesa`
+   (pega el valor cuando lo pida) o en GitHub → Settings → Secrets and variables → Actions.
+4. Lanza **Actions → Deploy → Run workflow** y confirma que termina en verde.
+5. Solo entonces **revoca el token anterior** en Cloudflare (API Tokens → ⋯ → Roll/Delete).
+
+El token actual se creó el 2026-11-18, sin vencimiento y para todas las cuentas del dueño.
 
 ## Qué hace el workflow
 
-1. `test`: Node 24 → `npm run check` y `npm test`.
+1. `test`: Node 24 → `npm run check` (sintaxis + escaneo de secretos), comprueba que `_worker.js` esté al día con `npm run build:data` y corre `npm test`.
 2. `deploy` (solo `push` a `main`, después de `test`): reemplaza el `?v=` de los HTML por el commit (cache-busting automático)
    y ejecuta `wrangler pages deploy app --project-name=malla-utesa --branch=main`.
 3. Un solo despliegue a la vez (`concurrency`). También se puede lanzar a mano: **Actions → Deploy → Run workflow**.

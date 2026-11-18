@@ -6,7 +6,7 @@ Requisito: **Node.js ≥ 22.5** (las pruebas usan `node:sqlite`). Sin dependenci
 
 ```bash
 npm test          # corre las 3 suites (≈ 20 s)
-npm run check     # sintaxis de todo el JavaScript (rápido)
+npm run check     # sintaxis de todo el JavaScript + escaneo de secretos (rápido); por separado: check:js y check:secrets
 npm run dev       # app completa en http://localhost:5190
 ```
 

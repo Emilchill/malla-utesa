@@ -2,6 +2,14 @@
 
 ¡Gracias por ayudar! Este proyecto es de estudiantes para estudiantes. Esta guía te lleva de cero a tu primer Pull Request.
 
+## 0. Acceso al repositorio (para el dueño)
+
+El repo es privado. Para que un amigo colabore: GitHub → **Settings → Collaborators → Add people** y dale el rol **Read**
+(*no* Write). Con *Read* puede clonar y hacer **fork** del repo y abrir Pull Requests desde su fork; el dueño los revisa y hace el merge.
+Quien tenga *Write* puede publicar directo a producción y usar el token de Cloudflare, y GitHub no deja proteger `main` en repos
+privados gratuitos (ver `SECURITY.md`). Nunca des *Write* ni *Admin* a alguien que no sea de confianza total.
+Los CI de un Pull Request desde fork pueden requerir que el dueño los apruebe en la pestaña *Actions*.
+
 ## 1. Preparar tu computador
 
 1. Instala **Git** y **Node.js 22.5 o superior** (recomendado 24). Mira `.nvmrc`.
