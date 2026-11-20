@@ -12,6 +12,7 @@ import { medalHtml, medalDetailHtml } from "./medal.js";
 import { initUtesaImport } from "./utesa-import.js";
 import { initSettings } from "./settings.js";
 import { openModal, closeModal, initModals } from "./modal.js";
+import { revealApp, firstPaint, replayIn } from "./motion.js";
 
 /* Guarda campos del usuario en D1 (vía /api/user) */
 async function saveUser(fields) {
@@ -115,8 +116,8 @@ function boot() {
   }), "importación UTESA");
   render();
 
-  document.getElementById("loader").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
+  firstPaint(document.getElementById("malla-content")); // las tarjetas entran escalonadas solo esta vez
+  revealApp(); // el esqueleto se desvanece sobre el panel ya pintado
   safeInit(trackHeaderHeight, "altura del encabezado"); // después de mostrar la app, para medir bien
   safeInit(initLinkPrompt, "ventana de vinculación");
   safeInit(() => {
@@ -654,6 +655,7 @@ function initViewSwitch() {
       viewMode = btn.dataset.view;
       document.querySelectorAll("#view-switch [data-view]").forEach(b => b.classList.toggle("seg-active", b === btn));
       render();
+      replayIn(document.getElementById("malla-content")); // fundido corto al cambiar de vista
     });
   });
 }

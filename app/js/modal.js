@@ -23,6 +23,8 @@ export function openModal(id) {
   if (!ov) return false;
   if (!openStack.includes(id)) openStack.push(id);
   ov.__opener = document.activeElement;
+  clearTimeout(ov.__closing);
+  ov.classList.remove("is-closing");
   ov.classList.remove("hidden");
   ov.style.display = "flex";
   document.body.classList.add("modal-open");
@@ -42,8 +44,13 @@ export function closeModal(id) {
   const ov = document.getElementById(id);
   if (!ov) return;
   const wasOpen = openStack.includes(id);
-  ov.classList.add("hidden");
-  ov.style.display = "none";
+  const hide = () => { ov.classList.remove("is-closing"); ov.classList.add("hidden"); ov.style.display = "none"; };
+  // salida suave: la ventana se desvanece ~170 ms antes de ocultarse (sin esperas si se prefiere menos movimiento)
+  let reduce = false;
+  try { reduce = matchMedia("(prefers-reduced-motion: reduce)").matches; } catch {}
+  clearTimeout(ov.__closing);
+  if (!wasOpen || reduce || ov.classList.contains("hidden")) hide();
+  else { ov.classList.add("is-closing"); ov.__closing = setTimeout(hide, 170); }
   const i = openStack.indexOf(id);
   if (i >= 0) openStack.splice(i, 1);
   if (!openStack.length) document.body.classList.remove("modal-open");

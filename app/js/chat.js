@@ -7,6 +7,7 @@ import { loadUser } from "./store.js";
 import { initModals } from "./modal.js";
 import { createChat } from "./chat-core.js";
 import { bindBell } from "./chat-prefs.js";
+import { revealApp } from "./motion.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -22,8 +23,7 @@ onAuthStateChanged(auth, async (user) => {
   initModals();
   bindBell($("chat-bell"));
   $("chat-me").innerHTML = framedAvatar(data.avatar, data.avatarBg, data.frame, 36);
-  $("loader").classList.add("hidden");
-  $("app").classList.remove("hidden");
+  revealApp(); // el esqueleto se desvanece
   const base = document.title;
   const chat = createChat({
     root: $("chat-root"),

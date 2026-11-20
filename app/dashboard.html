@@ -28,10 +28,37 @@
 </head>
 <body>
 
-  <!-- Loader mientras se verifica la sesión -->
-  <div id="loader" class="full-loader">
-    <div class="spinner-lg"></div>
-    <p class="muted" style="font-size:13.5px;">Cargando tu malla…</p>
+  <!-- Esqueleto de carga mientras se verifica la sesión (imita el panel para que no haya saltos) -->
+  <div id="loader" class="page-skel" role="status" aria-live="polite" aria-busy="true">
+    <span class="sr-only">Cargando tu malla…</span>
+    <div class="skel-head" aria-hidden="true">
+      <div class="skel-head-in">
+        <span class="skel skel-mark"></span><span class="skel skel-line lg" style="width:120px"></span>
+        <span class="skel skel-circle skel-push"></span><span class="skel-col skel-hide-sm"><span class="skel skel-line" style="width:96px"></span><span class="skel skel-line sm" style="width:150px"></span></span>
+      </div>
+    </div>
+    <div class="skel-page" aria-hidden="true">
+      <div class="skel-hero">
+        <div class="skel-card skel-ring-card"><span class="skel skel-ring"></span><span class="skel skel-line" style="width:70%"></span></div>
+        <div class="skel-stats">
+          <div class="skel-card"><span class="skel skel-num"></span><span class="skel skel-line sm" style="width:70%"></span></div>
+          <div class="skel-card"><span class="skel skel-num"></span><span class="skel skel-line sm" style="width:64%"></span></div>
+          <div class="skel-card"><span class="skel skel-num" style="width:96px"></span><span class="skel skel-line sm" style="width:74%"></span><span class="skel skel-bar"></span></div>
+        </div>
+      </div>
+      <div class="skel-card skel-sync"><span class="skel-col"><span class="skel skel-line" style="width:200px"></span><span class="skel skel-line sm" style="width:min(320px,70vw)"></span></span><span class="skel skel-btn wide"></span></div>
+      <div class="skel-toolbar"><span class="skel skel-input"></span><span class="skel skel-seg"></span><span class="skel skel-pill"></span><span class="skel skel-pill"></span><span class="skel skel-pill skel-hide-sm"></span></div>
+      <div class="skel-grid">
+        <div class="skel-card skel-subject" style="--i:0"><span class="skel skel-line sm" style="width:38%"></span><span class="skel skel-line" style="width:88%"></span><span class="skel skel-line" style="width:60%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:1"><span class="skel skel-line sm" style="width:34%"></span><span class="skel skel-line" style="width:76%"></span><span class="skel skel-line" style="width:52%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:2"><span class="skel skel-line sm" style="width:40%"></span><span class="skel skel-line" style="width:92%"></span><span class="skel skel-line" style="width:44%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:3"><span class="skel skel-line sm" style="width:36%"></span><span class="skel skel-line" style="width:70%"></span><span class="skel skel-line" style="width:58%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:4"><span class="skel skel-line sm" style="width:38%"></span><span class="skel skel-line" style="width:84%"></span><span class="skel skel-line" style="width:48%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:5"><span class="skel skel-line sm" style="width:32%"></span><span class="skel skel-line" style="width:74%"></span><span class="skel skel-line" style="width:62%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:6"><span class="skel skel-line sm" style="width:40%"></span><span class="skel skel-line" style="width:90%"></span><span class="skel skel-line" style="width:40%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+        <div class="skel-card skel-subject" style="--i:7"><span class="skel skel-line sm" style="width:36%"></span><span class="skel skel-line" style="width:80%"></span><span class="skel skel-line" style="width:56%"></span><span class="skel skel-line sm skel-end" style="width:30%"></span></div>
+      </div>
+    </div>
   </div>
 
   <div id="app" class="hidden">

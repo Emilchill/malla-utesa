@@ -2012,3 +2012,146 @@ a.wa-btn.btn-primary:hover { background: #178a44; }
 
 .pcard-via { font-size: 11.5px; font-weight: 700; color: #178a44; background: color-mix(in srgb, #1FA855 12%, transparent); padding: 3px 10px; border-radius: 999px; }
 .pcard-via.is-bm { color: #8a5a00; background: #fff2cf; }
+
+/* =====================================================================
+   Movimiento suave y esqueletos de carga (ver js/motion.js)
+   · Los esqueletos usan los colores del tema, así que se ven bien en temas claros y oscuros.
+   · Las entradas solo usan opacidad o un desplazamiento corto con "fill: backwards", para no
+     pisar los efectos :hover ni crear capas que muevan elementos fijos.
+   · Con "reducir movimiento" no hay brillo, ni entradas, ni esperas.
+   ===================================================================== */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+:root { --ease-out: cubic-bezier(.2, .75, .25, 1); }
+.page-skel, .skel-list, .skel-profile, .skel { --skel: color-mix(in srgb, var(--border) 72%, var(--bg)); --skel-shine: color-mix(in srgb, var(--card) 70%, transparent); }
+
+/* ---------- Esqueleto de página (cubre la pantalla mientras se carga la sesión) ---------- */
+.page-skel { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow: hidden; }
+.page-skel.is-leaving { animation: skelOut .32s ease forwards; pointer-events: none; }
+@keyframes skelOut { to { opacity: 0; visibility: hidden; } }
+
+.skel { display: block; flex: none; background: var(--skel); border-radius: 8px; position: relative; overflow: hidden; }
+.skel::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skel-shine), transparent);
+  animation: skelShine 1.5s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 80ms);
+}
+@keyframes skelShine { 60%, 100% { transform: translateX(100%); } }
+.skel-line { height: 11px; border-radius: 6px; max-width: 100%; }
+.skel-line.sm { height: 9px; }
+.skel-line.lg { height: 16px; }
+.skel-circle { width: 40px; height: 40px; border-radius: 50%; }
+.skel-circle.sm { width: 32px; height: 32px; }
+.skel-circle.lg { width: 46px; height: 46px; }
+.skel-circle.xl { width: 96px; height: 96px; }
+.skel-mark { width: 36px; height: 36px; border-radius: 10px; }
+.skel-num { width: 64px; height: 26px; border-radius: 8px; }
+.skel-btn { width: 84px; height: 32px; border-radius: 10px; }
+.skel-btn.wide { width: 150px; height: 36px; }
+.skel-pill { width: 84px; height: 34px; border-radius: 999px; }
+.skel-seg { width: 250px; height: 40px; border-radius: 12px; }
+.skel-input { width: 100%; height: 42px; border-radius: 12px; flex: 1 1 220px; max-width: 360px; }
+.skel-input.full { max-width: none; flex: none; }
+.skel-bar { width: 100%; height: 6px; border-radius: 4px; margin-top: 2px; }
+.skel-ring { width: 132px; height: 132px; border-radius: 50%; background: none; border: 12px solid var(--skel); }
+.skel-col { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1; }
+.skel-push { margin-left: auto; }
+.skel-end { margin-top: auto; align-self: flex-end; }
+.skel-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+
+.skel-head { border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 88%, transparent); }
+.skel-head-in { max-width: 1180px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+.skel-head-in .skel-col { flex: 0 1 auto; }
+.skel-page { max-width: 1180px; margin: 0 auto; padding: 28px 24px 0; }
+.skel-hero { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
+.skel-ring-card { align-items: center; padding: 26px; gap: 14px; }
+.skel-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-content: start; }
+.skel-sync { margin-top: 24px; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; }
+.skel-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
+.skel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-top: 24px; }
+.skel-subject { min-height: 108px; border-radius: 14px; padding: 14px; gap: 9px; }
+@media (max-width: 800px) {
+  .skel-hero { grid-template-columns: 1fr; }
+  .skel-ring-card { flex-direction: row; justify-content: flex-start; }
+  .skel-ring { width: 96px; height: 96px; border-width: 10px; }
+}
+@media (max-width: 640px) {
+  .skel-hide-sm { display: none !important; }
+  .skel-page { padding: 18px 16px 0; }
+  .skel-head-in { padding: 12px 16px; }
+  .skel-stats { gap: 10px; }
+  .skel-stats .skel-card { padding: 14px; }
+  .skel-sync .skel-btn { display: none; }
+  .skel-seg { width: 100%; }
+  .skel-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Comunidad: encabezado + buscador + lista de chats */
+.skel-chat { display: flex; flex-direction: column; }
+.skel-chat-top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); background: var(--card); border-bottom: 1px solid var(--border); }
+.skel-chat-body { width: 100%; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Listas y tarjetas que cargan dentro de la app (personas, grupo, perfil) */
+.skel-list { display: flex; flex-direction: column; }
+.skel-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.skel-row:last-child { border-bottom: 0; }
+.skel-profile { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 4px; }
+.skel-profile .skel-line { margin-inline: auto; }
+.skel-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 4px 0; }
+
+/* ---------- Entradas suaves ---------- */
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes riseIn { from { opacity: 0; transform: translateY(10px); } }
+@keyframes popIn { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@keyframes sheetIn { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes sheetOut { to { opacity: 0; transform: translateY(12px) scale(.985); } }
+
+/* Panel: tarjetas del encabezado escalonadas (son fijas: solo se animan al aparecer la app) */
+#app:not(.hidden) .dash-hero .card,
+#app:not(.hidden) .sync-card,
+#app:not(.hidden) .toolbar { animation: riseIn .5s var(--ease-out) backwards; }
+#app:not(.hidden) .stats-row .card:nth-child(1) { animation-delay: .06s; }
+#app:not(.hidden) .stats-row .card:nth-child(2) { animation-delay: .11s; }
+#app:not(.hidden) .stats-row .card:nth-child(3) { animation-delay: .16s; }
+#app:not(.hidden) .sync-card { animation-delay: .2s; }
+#app:not(.hidden) .toolbar { animation-delay: .24s; }
+
+/* Materias: entrada escalonada SOLO en el primer pintado (js/motion.js → firstPaint) */
+.malla-wrap.is-entering .subject-card,
+.malla-wrap.is-entering .next-chip,
+.malla-wrap.is-entering .cuatri-head { animation: riseIn .42s var(--ease-out) backwards; animation-delay: .28s; }
+.malla-wrap.is-entering .subject-card:nth-child(2) { animation-delay: .31s; }
+.malla-wrap.is-entering .subject-card:nth-child(3) { animation-delay: .34s; }
+.malla-wrap.is-entering .subject-card:nth-child(4) { animation-delay: .37s; }
+.malla-wrap.is-entering .subject-card:nth-child(5) { animation-delay: .40s; }
+.malla-wrap.is-entering .subject-card:nth-child(6) { animation-delay: .43s; }
+.malla-wrap.is-entering .subject-card:nth-child(7) { animation-delay: .46s; }
+.malla-wrap.is-entering .subject-card:nth-child(n+8) { animation-delay: .49s; }
+/* Cambio de vista (malla / gráficos / tarjetas): solo opacidad, para no mover elementos fijos de la malla */
+.malla-wrap.view-in { animation: fadeIn .28s ease backwards; }
+
+/* Ventanas: el fondo se funde y la caja sube un poco; al cerrar, lo contrario (js/modal.js) */
+.modal-overlay:not(.hidden) { animation: fadeIn .2s ease backwards; }
+.modal-overlay:not(.hidden) .modal-box { animation: sheetIn .26s var(--ease-out) backwards; }
+.modal-overlay.is-closing { animation: fadeOut .17s ease forwards; pointer-events: none; }
+.modal-overlay.is-closing .modal-box { animation: sheetOut .17s ease forwards; }
+
+/* Menús desplegables */
+.user-menu:not([hidden]) { animation: popIn .18s var(--ease-out) backwards; transform-origin: top right; }
+.theme-pop.show { animation: popIn .18s var(--ease-out) backwards; transform-origin: top right; }
+
+/* Chat: cada mensaje nuevo entra suave (no se repite al redibujar o editar) */
+.msg.is-new { animation: riseIn .26s var(--ease-out) backwards; }
+
+/* Respuesta táctil al pulsar */
+.chip, .seg-btn { transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease; }
+.chip:active, .seg-btn:active { transform: scale(.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .skel::after { animation: none; }
+  .page-skel.is-leaving, .malla-wrap.is-entering *, .malla-wrap.view-in,
+  #app:not(.hidden) .dash-hero .card, #app:not(.hidden) .sync-card, #app:not(.hidden) .toolbar,
+  .modal-overlay, .modal-box, .user-menu, .theme-pop, .msg.is-new { animation: none !important; }
+  .chip:active, .seg-btn:active { transform: none; }
+}

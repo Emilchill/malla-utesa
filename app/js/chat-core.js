@@ -14,6 +14,7 @@ import { ACH_BY_ID, TIERS, GLYPHS } from "./achievements.js";
 import { api, serverNow } from "./store.js";
 import { openModal, closeModal } from "./modal.js";
 import { subscribe, ping, pingId, pingInbox } from "./chat-live.js";
+import { skelRows, skelProfile } from "./motion.js";
 import { playPing, desktopNotify, isMuted, toggleMute, permState, turnOn } from "./chat-prefs.js";
 import { rankCardHtml } from "./ranks.js";
 
@@ -214,6 +215,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
         const html = msgHtml(m);
         if (prevEl) prevEl.insertAdjacentHTML("afterend", html); else list.insertAdjacentHTML("afterbegin", html);
         el = list.querySelector(`.msg[data-id="${m.id}"]`);
+        el.classList.add("is-new"); // entrada suave solo para lo que aparece por primera vez (no al redibujar)
         if (!el.nextElementSibling) appended = m; // quedó al final: es un mensaje nuevo (no historial)
       } else if (el.dataset.sig !== sigOf(m)) { // cambió (editado, borrado, ocultado o restaurado): se vuelve a dibujar en su sitio
         const open = el.classList.contains("is-open");
@@ -426,7 +428,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     const el = peopleEl.querySelector(".pp-dirlist");
     if (!el) return;
     if (!dir.people.length) {
-      el.innerHTML = dir.loading ? '<div class="spinner-lg"></div>' : `<p class="pp-empty">${dir.q ? "Nadie coincide con esa búsqueda." : "Aún no hay nadie visible en esta carrera."}</p>`;
+      el.innerHTML = dir.loading ? skelRows(6, "Buscando estudiantes…") : `<p class="pp-empty">${dir.q ? "Nadie coincide con esa búsqueda." : "Aún no hay nadie visible en esta carrera."}</p>`;
       return;
     }
     let last = null, html = "";
@@ -576,7 +578,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
 
   const gRole = (m) => (m.creator ? '<span class="role-chip is-owner">Creador</span>' : m.grole === "admin" ? '<span class="role-chip">Admin</span>' : "");
   async function renderGinfo() {
-    ginfoEl.innerHTML = '<div class="spinner-lg"></div>';
+    ginfoEl.innerHTML = skelRows(5, "Cargando el grupo…");
     const r = await api("GET", `/api/groups?id=${ginfoGid}`).catch(() => null);
     if (active !== "ginfo") return;
     if (!r || r.status !== 200) { ginfoEl.innerHTML = '<p class="pp-empty">No se pudo cargar el grupo.</p>'; return; }
@@ -785,7 +787,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
 
   async function showProfile(pid) {
     const card = document.getElementById("chat-pcard");
-    card.innerHTML = '<div class="spinner-lg"></div>';
+    card.innerHTML = skelProfile();
     openModal("chat-profile-overlay");
     try {
       const r = await api("GET", `/api/profile?pid=${encodeURIComponent(pid)}`);
