@@ -34,8 +34,8 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 | `PATCH /api/chat` | `{ id, text }`. Solo el autor y hasta 5 min. |
 | `DELETE /api/chat?id=` | Autor, o moderador (público), o admin del grupo. En privados/grupos el equipo global solo actúa si el mensaje fue reportado. Queda como mensaje borrado. |
 | `POST /api/chat/restore` | `{ id }`. Moderador: restaura un mensaje que ocultó el equipo. |
-| `POST /api/chat/report` | `{ id, reason }`. Solo de salas a las que perteneces. |
-| `GET /api/chat/reports` | Moderador: mensajes reportados. |
+| `POST /api/chat/report` | `{ id, reason }`. Solo de salas a las que perteneces. Guarda una copia del texto en ese momento. `409 oculto` si el mensaje ya fue borrado u ocultado. |
+| `GET /api/chat/reports` | Moderador: mensajes reportados, con el texto **tal como estaba al reportarlo** y las marcas `edited` / `selfDeleted` si su autor lo editó o borró después. Solo salen de la cola los ocultados por moderación (botón Ocultar/Archivar). |
 | `POST /api/chat/block` | `{ pid, on }`. Bloquear quita la amistad. |
 | `POST /api/chat/wipe` | `{ room: general\|carrera\|all }`. Moderador: vacía una sala pública; `all` (solo el dueño) vacía únicamente General y las salas de carrera. Cambia `chat_epoch` (los clientes se reinician). Los chats privados y los de grupo no se tocan. |
 | `POST /api/dm/read` | `{ pid }`. Marca un chat privado como leído. |
@@ -46,9 +46,9 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 |---|---|
 | `GET /api/people?career=&q=&offset=` | Directorio ("Ver estudiantes"): `careers[]` con conteos, `people[]` (60 por página, `more`), cada uno con `rel`, `online`, `seen`, `role`. `career=all` agrupa por carrera. Respeta "ocultarme" y bloqueos. |
 | `GET /api/friends` | `friends[]` (con `unread`, `lastAt`), `incoming[]`, `outgoing[]`, `unread`, `now`. |
-| `POST /api/friends` | `{ action: request\|accept\|decline\|cancel\|remove, pid }`. No contigo mismo; solicitudes cruzadas se aceptan solas; máx. 40 pendientes y 300 amigos. |
+| `POST /api/friends` | `{ action: request\|accept\|decline\|cancel\|remove, pid }`. No contigo mismo; solicitudes cruzadas se aceptan solas; máx. 40 pendientes y 300 amigos. Máximo 300 amigos por persona, comprobado también al aceptar y en la auto-aceptación (`409 limite`); máximo 40 solicitudes pendientes, con el tope dentro de la inserción. |
 | `GET /api/groups` · `GET /api/groups?id=` | Lista de mis grupos (con `unread`) · detalle con miembros y roles. |
-| `POST /api/groups` | `{ action, id?, … }`: `create{name,members[]}` (≤ 10 grupos por persona, solo amigos), `read`, `leave`, `delete` (creador), `rename`, `add{pid}`, `remove{pid}`, `role{pid,on}` (admins del grupo; solo el creador quita admins). Máx. 50 miembros. |
+| `POST /api/groups` | `{ action, id?, … }`: `create{name,members[]}` (≤ 10 grupos por persona, solo amigos), `read`, `leave`, `delete` (creador), `rename`, `add{pid}`, `remove{pid}`, `role{pid,on}` (admins del grupo; solo el creador quita admins). Máx. 50 miembros. Los topes de 10 grupos por persona y 50 miembros por grupo van dentro de la propia inserción (atómicos frente a peticiones simultáneas). |
 
 ## Moderación y administración
 

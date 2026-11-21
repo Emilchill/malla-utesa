@@ -243,4 +243,22 @@ globalThis.__fmt = null;
   ok("y los demás lo ven", r[1].messages.length === 1 && r[1].messages[0].text === "primer mensaje después del reinicio", r[1].messages);
 }
 
+// ===== auditoría run-2 (N-08): si UTESA dice otra carrera, el inicio directo no otorga logros =====
+{
+  await call("PUT", "/api/user", tok("jon"), prof("Jon Paz", "ISC"));
+  globalThis.__carrera = "CONTADURIA PUBLICA";
+  let x = await call("POST", "/api/utesa-login", tok("jon"), { matricula: "6100000", recinto: "UTSAN", password: "x" }, "5.5.5.1");
+  ok("N-08: UTESA dice Contaduría y el perfil dice ISC -> mismatch sin logros", x[0] === 200 && x[1].verified && x[1].verified.mismatch === true && x[1].verified.earned.length === 0 && x[1].verified.portalCareer === "CON", x[1].verified);
+  let g = await call("GET", "/api/user", tok("jon"));
+  ok("N-08: ... y no se guarda ninguna verificación", !g[1].user.verifiedAt && g[1].user.earned.length === 0 && g[1].user.pct === null, g[1].user);
+  globalThis.__carrera = "Ingeniería en Sistemas Computacionales";
+  x = await call("POST", "/api/utesa-login", tok("jon"), { matricula: "6100001", recinto: "UTSAN", password: "x" }, "5.5.5.2");
+  ok("N-08: si UTESA dice la misma carrera, verifica normal", x[0] === 200 && x[1].verified && !x[1].verified.mismatch && x[1].verified.earned.length > 3, x[1].verified && { mismatch: x[1].verified.mismatch, n: x[1].verified.earned.length });
+  globalThis.__carrera = "ADMINISTRACION DE EMPRESAS TURISTICAS Y HOTELERAS";
+  await call("PUT", "/api/user", tok("kim"), prof("Kim Sol", "ADM"));
+  x = await call("POST", "/api/utesa-login", tok("kim"), { matricula: "6100002", recinto: "UTSAN", password: "x" }, "5.5.5.3");
+  ok("N-08: el nombre más largo gana (Turísticas y Hoteleras no se confunde con Administración)", x[1].verified && x[1].verified.portalCareer === "ATH", x[1].verified);
+  globalThis.__carrera = undefined;
+}
+
 finish();

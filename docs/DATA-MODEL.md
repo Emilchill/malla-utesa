@@ -45,7 +45,7 @@ Los borrados quedan como "tombstone" (`hidden`); el texto de uno ocultado por el
 * `chat_groups(id, name, owner_uid, created_at)` y `group_members(gid, uid, role 'admin'|'member', joined_at)`.
 
 ### Moderación y control
-* `reports(message_id, reporter_uid, reason, created_at)` — reportes de mensajes.
+* `reports(message_id, reporter_uid, reason, created_at, text)` — reportes de mensajes. `text` es una copia del mensaje al reportarlo (evidencia aunque el autor lo edite o borre después).
 * `meta(k, v)` — pares clave/valor. Hoy: `chat_epoch` (cambia al vaciar chats; los clientes se reinician solos).
 * `banned(uid, at)` — cuentas eliminadas: no pueden volver a crear perfil (responden `403 eliminada`).
   Para readmitir a alguien: `DELETE FROM banned WHERE uid = '<uid>'` desde la consola de D1.

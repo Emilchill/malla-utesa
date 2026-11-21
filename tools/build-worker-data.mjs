@@ -7,13 +7,17 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { PENSUMS } from "../app/js/pensums-data.js";
 import { ACHIEVEMENTS } from "../app/js/achievements.js";
 
-const careerCodes = {};
+// misma normalización que normName() en _worker.js: sin acentos, en mayúsculas, solo letras separadas por un espacio
+const normName = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z]+/g, " ").trim();
+const careerCodes = {}, careerNames = {};
 for (const [k, p] of Object.entries(PENSUMS)) {
   careerCodes[k] = [...new Set(p.cuatrimestres.flatMap(c => c.materias.map(m => m.c)).filter(c => /^[A-Z]{2,4}-\d{3}$/.test(c)))];
+  careerNames[k] = normName(p.nombre);
 }
 const achBlock = `/* <<ACH-DATA>> */
 const ACH_CODES = new Set(${JSON.stringify(ACHIEVEMENTS.map(a => a.id))});
 const CAREER_CODES = ${JSON.stringify(careerCodes)};
+const CAREER_NAMES = ${JSON.stringify(careerNames)};
 /* <</ACH-DATA>> */`;
 
 const NL = /\r?\n/;

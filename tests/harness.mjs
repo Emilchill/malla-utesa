@@ -14,7 +14,7 @@ const mk = (q) => {
   let args = [];
   const o = {
     bind: (...a) => { args = a; return o; },
-    run: async () => { const r = sq.prepare(q).run(...args); return { meta: { last_row_id: Number(r.lastInsertRowid) } }; },
+    run: async () => { const r = sq.prepare(q).run(...args); return { meta: { last_row_id: Number(r.lastInsertRowid), changes: Number(r.changes) } }; },
     first: async () => sq.prepare(q).get(...args) || null,
     all: async () => ({ results: sq.prepare(q).all(...args) }),
   };
@@ -33,7 +33,7 @@ globalThis.fetch = async (u) => {
   if (u.includes("conexion.aspx")) return html("");
   if (u.includes("asignaturas-pendientes")) {
     const rows = allIsc.filter(c => !approved.has(c)).map(c => `<tr><td>${(globalThis.__fmt || ((x) => x))(c)}</td><td>x</td></tr>`).join("");
-    return html(`<input id="txtNombrecar" value="Ing"><input id="txtPensum" value="2023"><table><tr><th>Cód. Asig.</th><th>Nombre</th></tr>${rows}</table>`);
+    return html(`<input id="txtNombrecar" value="${globalThis.__carrera ?? "Ing"}"><input id="txtPensum" value="2023"><table><tr><th>Cód. Asig.</th><th>Nombre</th></tr>${rows}</table>`);
   }
   return html('<input id="txtCanAprob" value="6">');
 };

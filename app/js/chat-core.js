@@ -781,7 +781,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     const r = await api("GET", "/api/chat/reports").catch(() => null);
     if (!r || r.status !== 200) return;
     $(".chat-reports").innerHTML = r.data.reports.length
-      ? r.data.reports.map(x => `<li><span><strong>${esc(x.name)}</strong> (${x.n} reporte${x.n === 1 ? "" : "s"}${x.reason ? ` · ${esc(x.reason)}` : ""}): ${esc(x.text)}</span><button type="button" class="btn btn-ghost btn-sm" data-hide="${x.id}">Ocultar</button></li>`).join("")
+      ? r.data.reports.map(x => `<li><span><strong>${esc(x.name)}</strong> (${x.n} reporte${x.n === 1 ? "" : "s"}${x.reason ? ` · ${esc(x.reason)}` : ""}): ${esc(x.text)}${x.selfDeleted ? ' <em class="rep-flag">borrado por su autor después del reporte</em>' : x.edited ? ' <em class="rep-flag">editado después del reporte</em>' : ""}</span><button type="button" class="btn btn-ghost btn-sm" data-hide="${x.id}">${x.selfDeleted ? "Archivar" : "Ocultar"}</button></li>`).join("")
       : "<li>Sin reportes pendientes.</li>";
   }
 

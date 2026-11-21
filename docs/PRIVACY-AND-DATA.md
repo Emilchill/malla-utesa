@@ -50,3 +50,9 @@ Las reglas **publicadas** en la consola de Firebase (proyecto `malla-curricular-
 `users` (cada quien lee solo la suya, nadie escribe), `chatPing` e `inbox` (avisos `{ t: timestamp }`, sin contenido de mensajes). Cualquier cuenta autenticada
 puede escribir en cualquier `chatPing/*` válido e `inbox/{pid}`: no se filtra contenido (no hay), pero se puede gastar la cuota o hacer que el cliente de alguien
 refresque. El cliente trata un fallo de aviso como no crítico y sigue por sondeo. Mitigación recomendada: App Check.
+
+## Cambios del 2026-11-21 (auditoría run-2)
+
+* **Reportes:** cada reporte guarda una copia del texto del mensaje. Si el autor lo edita o lo borra después, el equipo sigue viendo el texto original (marcado) hasta archivarlo. Esa copia solo la ven moderadores y dueño, igual que antes el texto del mensaje reportado.
+* **Inicio directo con UTESA:** si el nombre de carrera que muestra el portal corresponde a una carrera distinta de la del perfil, no se otorgan logros ni porcentaje. Si el nombre no se reconoce, sigue rigiendo la regla del 60 %.
+* **Topes:** el máximo de 300 amigos se aplica también al aceptar; los topes de solicitudes pendientes, grupos y miembros son atómicos.

@@ -399,4 +399,54 @@ ok("el avance no puede retroceder de golpe -> 409", r[0] === 409, r);
 let last; for (let i = 0; i < 3; i++) last = await vcall(tok("ana"), { pending: pendAll });
 ok("límite de intentos por hora -> 429", last[0] === 429, last);
 
+
+// ===== auditoría run-2: evidencia de reportes (N-04) y topes atómicos (N-12) =====
+for (const [u, n] of [["fay", "Fay Luna"], ["gus", "Gus Peña"], ["hal", "Hal Ríos"], ["ivy", "Ivy Sol"]]) await call("PUT", "/api/user", tok(u), prof(n, "ISC"));
+for (const u of ["fay", "gus", "hal", "ivy"]) pid[u] = (await call("GET", "/api/user", tok(u)))[1].user.pid;
+
+// N-04: el reporte guarda el texto; borrar o editar después no destruye la evidencia
+await sleep(1300);
+r = await call("POST", "/api/chat", tok("fay"), { room: "general", text: "texto original que molesta a alguien" });
+const fayMsg = r[1].id;
+r = await call("POST", "/api/chat/report", tok("gus"), { id: fayMsg, reason: "acoso" });
+ok("N-04: Gus reporta el mensaje de Fay", r[0] === 200, r);
+r = await call("PATCH", "/api/chat", tok("fay"), { id: fayMsg, text: "texto suave" });
+ok("N-04: Fay edita su mensaje después del reporte (sigue permitido)", r[0] === 200, r);
+let rep = (await call("GET", "/api/chat/reports", bossTok()))[1].reports.find(x => x.id === fayMsg);
+ok("N-04: la cola muestra el texto ORIGINAL y marca que se editó", rep && rep.text === "texto original que molesta a alguien" && rep.edited === true && !rep.selfDeleted, rep || null);
+r = await call("DELETE", `/api/chat?id=${fayMsg}`, tok("fay"));
+rep = (await call("GET", "/api/chat/reports", bossTok()))[1].reports.find(x => x.id === fayMsg);
+ok("N-04: si Fay lo borra, sigue en la cola con el texto original y marcado", r[0] === 200 && rep && rep.selfDeleted === true && rep.text === "texto original que molesta a alguien", rep || null);
+r = await call("POST", "/api/chat/report", tok("hal"), { id: fayMsg, reason: "x" });
+ok("N-04: no se puede reportar un mensaje ya borrado (409)", r[0] === 409 && r[1].code === "oculto", r);
+r = await call("DELETE", `/api/chat?id=${fayMsg}`, bossTok());
+rep = (await call("GET", "/api/chat/reports", bossTok()))[1].reports.find(x => x.id === fayMsg);
+ok("N-04: el equipo lo archiva y sale de la cola", r[0] === 200 && !rep, rep || null);
+
+// N-12: el máximo de amigos se aplica también al aceptar y a la auto-aceptación
+const t0 = Date.now();
+for (let i = 0; i < 300; i++) sq.prepare("INSERT INTO friendships (from_uid, to_uid, status, created_at) VALUES (?, 'hal', 'accepted', ?)").run("relleno" + i, t0);
+r = await call("POST", "/api/friends", tok("ivy"), { action: "request", pid: pid.hal });
+ok("N-12: Ivy puede pedirle amistad a Hal (Ivy no está llena)", r[0] === 200 && r[1].rel === "sent", r);
+r = await call("POST", "/api/friends", tok("hal"), { action: "accept", pid: pid.ivy });
+ok("N-12: Hal (300 amigos) no puede aceptar -> 409", r[0] === 409 && r[1].code === "limite", r);
+r = await call("POST", "/api/friends", tok("hal"), { action: "request", pid: pid.ivy });
+ok("N-12: tampoco por auto-aceptación -> 409", r[0] === 409 && r[1].code === "limite", r);
+sq.prepare("DELETE FROM friendships WHERE from_uid LIKE 'relleno%'").run();
+
+// N-12: tope de 50 miembros y de 10 grupos dentro de la inserción
+await call("POST", "/api/friends", tok("fay"), { action: "request", pid: pid.gus });
+await call("POST", "/api/friends", tok("gus"), { action: "accept", pid: pid.fay });
+r = await call("POST", "/api/groups", tok("fay"), { action: "create", name: "Grupo lleno" });
+const fullGid = r[1].id;
+for (let i = 0; i < 49; i++) sq.prepare("INSERT INTO group_members (gid, uid, role, joined_at) VALUES (?, ?, 'member', ?)").run(fullGid, "socio" + i, t0);
+r = await call("POST", "/api/groups", tok("fay"), { action: "add", id: fullGid, pid: pid.gus });
+ok("N-12: grupo con 50 personas -> no se puede agregar (409)", r[0] === 409 && r[1].code === "limite", r);
+const cnt = sq.prepare("SELECT COUNT(*) AS n FROM group_members WHERE gid = ?").get(fullGid).n;
+ok("N-12: ... y sigue en 50", cnt === 50, cnt);
+for (let i = 0; i < 9; i++) await call("POST", "/api/groups", tok("fay"), { action: "create", name: "G" + i });
+r = await call("POST", "/api/groups", tok("fay"), { action: "create", name: "Once" });
+ok("N-12: el grupo número 11 se rechaza (429)", r[0] === 429 && r[1].code === "limite", r);
+ok("N-12: ... y Fay tiene exactamente 10 grupos", sq.prepare("SELECT COUNT(*) AS n FROM chat_groups WHERE owner_uid = 'fay'").get().n === 10);
+
 finish();

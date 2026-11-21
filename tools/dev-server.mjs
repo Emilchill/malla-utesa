@@ -84,7 +84,7 @@ document.getElementById("u").innerHTML = Object.entries(users).map(([k, v]) => '
 /* ---------------------------------------------------------------- 2. API real (worker) + SQLite en memoria */
 const sq = new DatabaseSync(":memory:");
 const prep = (q) => { let args = []; const o = { bind: (...x) => { args = x; return o; },
-  run: async () => { const r = sq.prepare(q).run(...args); return { meta: { last_row_id: Number(r.lastInsertRowid) } }; },
+  run: async () => { const r = sq.prepare(q).run(...args); return { meta: { last_row_id: Number(r.lastInsertRowid), changes: Number(r.changes) } }; },
   first: async () => sq.prepare(q).get(...args) || null,
   all: async () => ({ results: sq.prepare(q).all(...args) }) }; return o; };
 const DB = { prepare: prep, batch: async (list) => { for (const s of list) await s.run(); } };
