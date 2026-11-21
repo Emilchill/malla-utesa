@@ -2238,3 +2238,13 @@ a.wa-btn.btn-primary:hover { background: #178a44; }
 }
 @media (prefers-reduced-motion: reduce) { .mg-node, .mg-lines path, .mg-col-bar i { transition: none !important; } }
 @media print { .mg-bar { display: none !important; } }
+
+/* Creador de personaje: opciones nuevas destacadas (cortes, barbas, piercings…) */
+.cc-tile { position: relative; }
+.cc-tile.is-new { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.cc-new {
+  position: absolute; top: 3px; right: 3px; z-index: 1; padding: 1px 4px; border-radius: 999px; line-height: 1.3;
+  font-size: 8.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--accent); color: #1b1b1b; box-shadow: 0 0 0 2px var(--card);
+}
+.cc-tile[aria-checked="true"] .cc-new { background: var(--primary); color: #fff; }

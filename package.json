@@ -6,7 +6,7 @@
   "type": "module",
   "engines": { "node": ">=22.5" },
   "scripts": {
-    "test": "node tests/server.core.test.mjs && node tests/server.social.test.mjs && node tests/moderation.test.mjs && node tests/utesa-import.test.mjs && node tests/headers.test.mjs",
+    "test": "node tests/server.core.test.mjs && node tests/server.social.test.mjs && node tests/moderation.test.mjs && node tests/utesa-import.test.mjs && node tests/headers.test.mjs && node tests/character.test.mjs",
     "build:data": "node tools/build-worker-data.mjs",
     "check": "node --check app/_worker.js && npm run check:js && npm run check:secrets",
     "check:js": "node tools/check-js.mjs",

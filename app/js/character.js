@@ -25,7 +25,9 @@ const DEFAULT_BG = { p: "#5D7BC9", a: "#F5C542" };
 
 /* ---------- Paletas ---------- */
 const SKIN = ["#FDE3CF", "#F6CBA6", "#E7B48B", "#D49C70", "#BF8A5E", "#A66C43", "#8A5232", "#6E4224", "#543020", "#3B2216"];
-const HAIR = ["#1d1612", "#3a2619", "#5A3825", "#8B5A2B", "#B9824B", "#D9A441", "#F0D58C", "#C0392B", "#E0693F", "#8c8c93", "#E8E8EC", "#3B82F6", "#A855F7", "#EC4899"];
+const HAIR = ["#1d1612", "#3a2619", "#5A3825", "#8B5A2B", "#B9824B", "#D9A441", "#F0D58C", "#C0392B", "#E0693F", "#8c8c93", "#E8E8EC", "#3B82F6", "#A855F7", "#EC4899",
+  /* añadidos 2026-11 (siempre al final: los índices guardados no cambian) */ "#EFE3C8", "#F9A8D4", "#5EEAD4", "#B5541C", "#1E3A8A", "#4B5320"];
+const METAL = "#C9CED6", METAL_D = "#8A919C";
 const EYES = ["#3b2a1e", "#6b4423", "#4a7a3b", "#2f6fb0", "#6b7c93", "#8e5aa8", "#1b1b1b", "#2aa198"];
 const LIPS = ["#C2455C", "#E0607E", "#A3283D", "#D9774F", "#7A2E4A", "#B4496B", "#E8A0A8", "#4B2D5E"];
 const BLUSH = ["#FF8FA3", "#FF9E7A", "#F2A3C8", "#E07A7A", "#C98CE0", "#F5B873"];
@@ -47,18 +49,24 @@ export const SCHEMAS = {
         { key: "s", label: "Tono de piel", type: "color", colors: SKIN, def: 2, crop: "head" },
         { key: "f", label: "Forma de la cara", type: "opt", names: L("Ovalada", "Redonda", "Cuadrada"), def: 0, crop: "head" },
       ] },
-      { id: "pelo", label: "Pelo", fields: [
-        { key: "h", label: "Peinado", type: "opt", names: L("Sin pelo", "Rapado", "Corto", "De lado", "Rizado", "Afro", "Moño", "Cola de caballo", "Melena corta", "Melena larga", "Puntas", "Dos moños"), def: 2, crop: "head" },
+      { id: "pelo", label: "✂️ Cortes", fields: [
+        { key: "h", label: "Corte de pelo", type: "opt", names: L("Sin pelo", "Rapado", "Corto", "De lado", "Rizado", "Afro", "Moño", "Cola de caballo", "Melena corta", "Melena larga", "Puntas", "Dos moños",
+          "Degradado", "Mohicano", "Tupé", "Flequillo", "Ondulado", "Rastas", "Trenzas", "Trenzas pegadas", "Rizos con degradado", "Moño alto"), def: 2, isNew: 12, crop: "head" },
         { key: "hc", label: "Color del pelo", type: "color", colors: HAIR, def: 1, crop: "head" },
-        { key: "fh", label: "Vello facial", type: "opt", names: L("Ninguno", "Sombra", "Bigote", "Perilla", "Barba"), def: 0, none: true, crop: "face" },
+      ] },
+      { id: "barba", label: "🧔 Barba", fields: [
+        { key: "fh", label: "Vello facial", type: "opt", names: L("Ninguno", "Sombra", "Bigote", "Perilla", "Barba",
+          "Barba corta", "Candado", "Barba larga", "Patillas", "Bigote de manubrio", "Barba de collar", "Mosca"), def: 0, none: true, isNew: 5, crop: "beard" },
+        { key: "fhc", label: "Color de la barba (vacío = igual que el pelo)", type: "color", colors: HAIR, none: true, def: 0, crop: "beard" },
       ] },
       { id: "rostro", label: "Rostro", fields: [
         { key: "e", label: "Ojos", type: "opt", names: L("Naturales", "Puntos", "Felices", "Dormilones", "Pestañas"), def: 0, crop: "eyes" },
         { key: "ec", label: "Color de ojos", type: "color", colors: EYES, def: 1, crop: "face" },
-        { key: "b", label: "Cejas", type: "opt", names: L("Sin cejas", "Suaves", "Rectas", "Gruesas", "Arqueadas"), def: 1, crop: "eyes" },
+        { key: "b", label: "Cejas", type: "opt", names: L("Sin cejas", "Suaves", "Rectas", "Gruesas", "Arqueadas", "Con corte", "Pobladas"), def: 1, isNew: 5, crop: "eyes" },
         { key: "n", label: "Nariz", type: "opt", names: L("Línea", "Redonda", "Pequeña"), def: 0, crop: "mouth" },
         { key: "m", label: "Boca", type: "opt", names: L("Sonrisa", "Sonrisa grande", "Neutra", "Pícara", "Sorpresa", "Lengua"), def: 0, crop: "mouth" },
         { key: "fr", label: "Pecas", type: "bool", def: 0, crop: "face" },
+        { key: "mo", label: "Lunar", type: "opt", names: L("Ninguno", "Mejilla", "Sobre el labio", "Junto al ojo"), def: 0, none: true, isNew: 1, crop: "face" },
       ] },
       { id: "maquillaje", label: "Maquillaje", fields: [
         { key: "lp", label: "Labios", type: "color", colors: LIPS, none: true, def: 0, crop: "mouth" },
@@ -74,7 +82,8 @@ export const SCHEMAS = {
       ] },
       { id: "extras", label: "Extras", fields: [
         { key: "g", label: "Lentes", type: "opt", names: L("Ninguno", "Redondos", "Cuadrados", "De sol", "Ojo de gato"), def: 0, none: true, crop: "face" },
-        { key: "er", label: "Aretes", type: "opt", names: L("Ninguno", "Botones", "Aros"), def: 0, none: true, crop: "head" },
+        { key: "er", label: "Aretes", type: "opt", names: L("Ninguno", "Botones", "Aros", "Colgantes"), def: 0, none: true, isNew: 3, crop: "head" },
+        { key: "pc", label: "Piercing", type: "opt", names: L("Ninguno", "Aro en la nariz", "Septum", "Ceja", "Labio"), def: 0, none: true, isNew: 1, crop: "face" },
         { key: "ht", label: "Gorro o sombrero", type: "opt", names: L("Ninguno", "Gorra", "Gorro", "Corona", "Fiesta", "Birrete", "Casco de obra", "Boina", "Diadema", "🎅 Gorro de Santa", "🧝 Gorro de elfo", "🦌 Cuernos de reno", "🎄 Corona de acebo", "Vaquero", "Copa", "Pamela"), def: 0, none: true, crop: "head" },
         { key: "hv", label: "Color del gorro", type: "color", colors: BG_COLORS, def: 0, crop: "head" },
       ] },
@@ -116,7 +125,7 @@ export const SCHEMAS = {
   },
 };
 
-const CROPS = { head: "6 0 88 88", face: "22 26 56 52", eyes: "29 33 42 42", mouth: "27 40 46 46", body: "4 46 92 54", full: "0 0 100 100" };
+const CROPS = { beard: "17 30 66 66", head: "6 0 88 88", face: "22 26 56 52", eyes: "29 33 42 42", mouth: "27 40 46 46", body: "4 46 92 54", full: "0 0 100 100" };
 
 const fieldsOf = (kind) => SCHEMAS[kind].tabs.flatMap(t => t.fields);
 const countOf = (f) => f.type === "bool" ? 2 : f.type === "opt" ? f.names.length : f.colors.length + (f.none ? 1 : 0);
@@ -294,7 +303,13 @@ const HAIRLINE = {
   bob: "M-10 -10H110V46H73V41Q50 32 27 41V46H-10Z",
   afro: "M-10 -10H110V46H73Q67 37 50 35Q33 37 27 46H-10Z",
   buns: "M-10 -10H110V46H74Q68 34 50 32.5Q32 34 26 46H-10Z",
+  top: "M-10 -10H110V38H71.5Q68 32 50 31Q32 32 28.5 38H-10Z",   // parte de arriba con entradas suaves (degradados)
+  bangs: "M-10 -10H110V46H74V40Q50 38.6 26 40V46H-10Z",          // flequillo recto, por encima de las cejas
+  part: "M-10 -10H110V46H73Q71 33 52 31L50 35L48 31Q29 33 27 46H-10Z", // raya al medio
 };
+
+/* Cortes que sobresalen por arriba: con gorro o casco se dibujan como un corte bajo equivalente */
+const TALL_HAIR = { 10: 2, 13: 1, 14: 2, 20: 12, 21: 12 };
 
 /** [pelo detrás de la cabeza, pelo delante]. `cap(region, sx, sy, opacidad)` dibuja el gorro de pelo. */
 function hairArt(style, c, cap) {
@@ -310,6 +325,41 @@ function hairArt(style, c, cap) {
     case 9: return [longBack(c), cap(HAIRLINE.swept)];
     case 10: return ["", `<path d="M29 38 L26 22 L36 30 L38 13 L46 28 L52 8 L58 28 L65 13 L68 30 L78 22 L72 38Z" fill="${c}"/>` + cap(HAIRLINE.short)];
     case 11: return [`<circle cx="24" cy="36" r="13" fill="${c}"/><circle cx="76" cy="36" r="13" fill="${c}"/>`, cap(HAIRLINE.buns)];
+    // ---- añadidos 2026-11 ----
+    case 12: return ["", cap(HAIRLINE.buzz, 1.03, 1.05, 0.5) + cap(HAIRLINE.top, 1.08, 1.12)];                       // degradado
+    case 13: return ["", cap(HAIRLINE.buzz, 1.03, 1.05, 0.28) +                                                        // mohicano
+      `<path d="M43 36 Q40.5 20 44 12 Q47 6 50 4 Q53 6 56 12 Q59.5 20 57 36Z" fill="${c}"/>` +
+      `<path d="M50 7 V33" stroke="${mix(c, "#000000", 0.25)}" stroke-width="1" opacity=".5"/>`];
+    case 14: return ["", cap(HAIRLINE.buzz, 1.03, 1.05, 0.55) +                                                        // tupé
+      `<path d="M30 39 Q27 27 34 21 Q41 13 53 12 Q66 12 71 21 Q74 28 71 39 Q69 33 64 31 Q57 28.6 50 31.4 Q45 33.4 40 31 Q34 30 30 39Z" fill="${c}"/>` +
+      `<path d="M37 24 Q44 17 54 16.6 M46 27 Q53 21 63 22" fill="none" stroke="${mix(c, "#000000", 0.28)}" stroke-width="1.1" stroke-linecap="round" opacity=".55"/>`];
+    case 15: return [bobBack(c), cap(HAIRLINE.bangs)];                                                                 // flequillo
+    case 16: return [`<path d="M25 48 Q19 66 24 80 Q28 87 34 83 Q38 89 44 85 Q50 89 56 85 Q62 89 66 83 Q72 87 76 80 Q81 66 75 48 Q76 22 50 22 Q24 22 25 48Z" fill="${c}"/>`,
+      cap(HAIRLINE.part) + `<path d="M30 46 Q27 38 33 33 M70 46 Q73 38 67 33" fill="none" stroke="${mix(c, "#000000", 0.22)}" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>`]; // ondulado
+    case 17: {                                                                                                         // rastas
+      const d = mix(c, "#000000", 0.28);
+      const loc = (x, y2) => `<path d="M${x} 38 V${y2}" stroke="${c}" stroke-width="5.4" stroke-linecap="round"/><path d="M${x - 1.6} ${46} h3.2 M${x - 1.6} ${56} h3.2 M${x - 1.6} ${66} h3.2" stroke="${d}" stroke-width=".9" opacity=".6"/>`;
+      return [[24, 29.5, 35, 65, 70.5, 76].map((x, i) => loc(x, [80, 88, 84, 84, 88, 80][i])).join(""),
+        cap(HAIRLINE.part) + `<g stroke="${d}" stroke-width="1" opacity=".45" fill="none"><path d="M38 31 Q36 37 34 42"/><path d="M62 31 Q64 37 66 42"/></g>`];
+    }
+    case 18: {                                                                                                         // trenzas
+      const d = mix(c, "#000000", 0.25);
+      const braid = (x) => [56, 63, 70, 77, 84].map(y => `<ellipse cx="${x}" cy="${y}" rx="4" ry="4.2" fill="${c}" stroke="${d}" stroke-width=".8"/>`).join("") +
+        `<path d="M${x - 2} 89 L${x} 95 L${x + 2} 89Z" fill="${c}"/><rect x="${x - 2.6}" y="87.4" width="5.2" height="2.2" rx="1" fill="${mix(c, "#ffffff", 0.45)}"/>`;
+      return [`<path d="M25 52 Q24 44 30 44 L30 58 Z M75 52 Q76 44 70 44 L70 58Z" fill="${c}"/>` + braid(25.5) + braid(74.5), cap(HAIRLINE.part)];
+    }
+    case 19: {                                                                                                         // trenzas pegadas
+      const d = mix(c, "#000000", 0.35);
+      return ["", cap(HAIRLINE.short) + `<g fill="none" stroke="${d}" stroke-width="1.1" stroke-linecap="round" opacity=".75">` +
+        [36, 42, 48, 54, 60, 66].map((x, i) => `<path d="M${x} ${[38, 33.5, 32, 32, 33.5, 38][i]} Q${x + (x - 50) * 0.08} 28 ${50 + (x - 50) * 0.62} 24"/>`).join("") + `</g>`];
+    }
+    case 20: {                                                                                                         // rizos con degradado
+      const curl = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/><path d="M${x - r * 0.5} ${y} a${r * 0.5} ${r * 0.5} 0 1 1 ${r * 0.5} ${r * 0.5}" fill="none" stroke="${mix(c, "#000000", 0.3)}" stroke-width=".7" opacity=".6"/>`;
+      return ["", cap(HAIRLINE.buzz, 1.03, 1.05, 0.5) +
+        [[34, 33, 5.4], [41, 27, 6], [50, 25, 6.4], [59, 27, 6], [66, 33, 5.4], [45, 33, 5], [55, 33, 5], [50, 29, 5]].map(([x, y, r]) => curl(x, y, r)).join("")];
+    }
+    case 21: return [`<circle cx="50" cy="16.5" r="7" fill="${c}"/><path d="M45.6 21 Q50 23.4 54.4 21" stroke="${mix(c, "#000000", 0.3)}" stroke-width="1.1" fill="none"/>`, // moño alto
+      cap(HAIRLINE.buzz, 1.03, 1.05, 0.5) + cap(HAIRLINE.top, 1.06, 1.1)];
     default: return ["", ""];
   }
 }
@@ -537,8 +587,11 @@ function personSvg(c, gid) {
   const hair = HAIR[c.hc], brow = mix(hair, "#000000", 0.25);
   const ec = EYES[c.ec];
   const hasHat = c.ht > 0;
-  // con sombrero, los peinados que sobresalen (moño, puntas) se adaptan para que no lo atraviesen
-  const hairStyle = hasHat && c.h === 10 ? 2 : c.h;
+  // con sombrero, corona o casco, los cortes que sobresalen (moño, puntas, mohicano, tupé…) se adaptan
+  // para que no lo atraviesen
+  const covered = hasHat || c.xh === 1 || c.xh === 3;
+  const hairStyle = covered && TALL_HAIR[c.h] != null ? TALL_HAIR[c.h] : c.h;
+  const beard = c.fhc ? HAIR[c.fhc - 1] : hair;
   const headEl = (extra) => c.f === 1 ? `<ellipse cx="50" cy="51" rx="25" ry="25" ${extra}/>`
     : `<path d="${c.f === 2 ? FACE_SQUARE : FACE_OVAL}" ${extra}/>`;
   let capN = 0;
@@ -547,7 +600,7 @@ function personSvg(c, gid) {
     return `<clipPath id="${id}"><path d="${region}"/></clipPath><g clip-path="url(#${id})" opacity="${op}"><g transform="translate(50 51) scale(${sx} ${sy}) translate(-50 -51)">${headEl(`fill="${hair}"`)}</g></g>`;
   };
   let [hBack, hFront] = hairArt(hairStyle, hair, cap);
-  if (hasHat && c.h === 6) hBack = "";
+  if (covered && c.h === 6) hBack = "";
   const hatFit = c.h === 5 ? { dy: -5, sx: 1.34 } : c.h === 4 ? { dy: -1, sx: 1.16 } : { dy: c.f === 1 ? 4 : 2, sx: 1.08 };
   const head = headEl(`fill="${skin}"`);
   const earX = [21.6, 24.6, 23][c.f];       // distancia de la oreja al centro
@@ -560,25 +613,50 @@ function personSvg(c, gid) {
     bw("M35 42.5 H45") + bw("M55 42.5 H65"),
     bw("M35 43 Q40 40.5 45 42.5", 3.8) + bw("M55 42.5 Q60 40.5 65 43", 3.8),
     bw("M35 44 Q40 38 45 41.5") + bw("M55 41.5 Q60 38 65 44"),
+    bw("M35 43 Q40 40.6 45 42.6") + bw("M55 42.6 Q57 41.4 59 41.1") + bw("M62 41.3 Q63.6 41.9 65 43"),   // con corte
+    bw("M34.5 43.2 Q40 39.8 45.5 42.4", 4.6) + bw("M54.5 42.4 Q60 39.8 65.5 43.2", 4.6),                 // pobladas
   ][c.b];
   const nose = [
     `<path d="M50 52 Q47.5 58 51.5 58.6" fill="none" stroke="${shade}" stroke-width="2" stroke-linecap="round"/>`,
     `<circle cx="50" cy="57" r="2.5" fill="${shade}"/>`,
     `<path d="M47.6 58.4 Q50 53.4 52.4 58.4" fill="none" stroke="${shade}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
   ][c.n];
-  const stache = `<path d="M41 61 Q45 57.6 50 60.4 Q55 57.6 59 61 Q55 63.6 50 62 Q45 63.6 41 61Z" fill="${hair}"/>`;
+  const stache = `<path d="M41 61 Q45 57.6 50 60.4 Q55 57.6 59 61 Q55 63.6 50 62 Q45 63.6 41 61Z" fill="${beard}"/>`;
   const bx1 = 50 - beardHw - 0.3, bx2 = 50 + beardHw + 0.3;
+  const beardShape = (bottom, tip = 50) =>
+    `<path d="M${bx1} 58 Q${bx1 + 1} ${bottom - 1} ${tip} ${bottom} Q${bx2 - 1} ${bottom - 1} ${bx2} 58 Q${bx2 - 5} 68.5 50 68.5 Q${bx1 + 5} 68.5 ${bx1} 58Z" fill="${beard}"/>`;
+  const handle = `<path d="M50 60.2 Q45 57.2 40.4 59.6 Q37 61.4 35.6 58.4 Q35 56.2 37.2 56.4 Q36.6 58.8 39 58.6 Q44.6 56 50 58.6Z" fill="${beard}"/>`;
   const facial = [
     "",
-    `<defs><linearGradient id="${gid}s" gradientUnits="userSpaceOnUse" x1="0" y1="58" x2="0" y2="77"><stop offset="0" stop-color="${hair}" stop-opacity="0"/><stop offset="1" stop-color="${hair}" stop-opacity=".42"/></linearGradient></defs><g clip-path="url(#${gid}h)"><rect x="0" y="58" width="100" height="42" fill="url(#${gid}s)"/></g>`,
+    `<defs><linearGradient id="${gid}s" gradientUnits="userSpaceOnUse" x1="0" y1="58" x2="0" y2="77"><stop offset="0" stop-color="${beard}" stop-opacity="0"/><stop offset="1" stop-color="${beard}" stop-opacity=".42"/></linearGradient></defs><g clip-path="url(#${gid}h)"><rect x="0" y="58" width="100" height="42" fill="url(#${gid}s)"/></g>`,
     stache,
-    stache + `<path d="M44 69 Q50 66 56 69 Q56 77 50 78 Q44 77 44 69Z" fill="${hair}"/>`,
-    `<path d="M${bx1} 58 Q${bx1 + 1} 84 50 85 Q${bx2 - 1} 84 ${bx2} 58 Q${bx2 - 5} 68.5 50 68.5 Q${bx1 + 5} 68.5 ${bx1} 58Z" fill="${hair}"/>` + stache,
+    stache + `<path d="M44 69 Q50 66 56 69 Q56 77 50 78 Q44 77 44 69Z" fill="${beard}"/>`,
+    beardShape(85) + stache,
+    // ---- añadidos 2026-11 ----
+    `<g opacity=".88">${beardShape(80)}</g>` + stache,                                                             // barba corta
+    stache + `<path d="M41.4 61.4 Q40 73 50 77.4 Q60 73 58.6 61.4 Q57 61 56.4 63.4 Q56.6 70.4 50 71.2 Q43.4 70.4 43.6 63.4 Q43 61 41.4 61.4Z" fill="${beard}"/>`, // candado
+    beardShape(97) + `<path d="M46 88 Q50 92 54 88" fill="none" stroke="${mix(beard, "#000000", 0.25)}" stroke-width=".9" opacity=".6"/>` + stache, // barba larga
+    `<g clip-path="url(#${gid}h)"><path d="M${bx1 - 2} 43 H${bx1 + 3.6} L${bx1 + 4.4} 58.5 Q${bx1 + 2} 60.4 ${bx1 - 2} 59Z M${bx2 + 2} 43 H${bx2 - 3.6} L${bx2 - 4.4} 58.5 Q${bx2 - 2} 60.4 ${bx2 + 2} 59Z" fill="${beard}"/></g>`, // patillas
+    handle + `<g transform="translate(100 0) scale(-1 1)">${handle}</g>`,                                         // bigote de manubrio
+    `<path d="M${bx1 + 0.8} 52 Q${bx1 + 1.6} 79 50 82 Q${bx2 - 1.6} 79 ${bx2 - 0.8} 52" fill="none" stroke="${beard}" stroke-width="4.4" stroke-linecap="round"/>`, // barba de collar
+    `<path d="M47.6 68.4 Q50 67.6 52.4 68.4 L50 72.6Z" fill="${beard}"/>`,                                         // mosca
   ][c.fh];
   const earY = c.er === 2 ? 60.5 : 58.2;
   const earrings = c.er === 0 ? "" : [50 - earX - 0.2, 50 + earX + 0.2].map(x => c.er === 1
     ? `<circle cx="${x}" cy="${earY}" r="1.9" fill="#F5C542" stroke="#C9962B" stroke-width=".6"/>`
-    : `<circle cx="${x}" cy="${earY}" r="3.1" fill="none" stroke="#F5C542" stroke-width="1.5"/>`).join("");
+    : c.er === 3
+      ? `<path d="M${x} 57.6 V63.4" stroke="#C9962B" stroke-width=".8"/><circle cx="${x}" cy="57.8" r="1.2" fill="#F5C542"/><path d="M${x} 62.6 L${x - 1.9} 65.6 L${x} 68.6 L${x + 1.9} 65.6Z" fill="#F5C542" stroke="#C9962B" stroke-width=".6"/>`
+      : `<circle cx="${x}" cy="${earY}" r="3.1" fill="none" stroke="#F5C542" stroke-width="1.5"/>`).join("");
+  const ring = (cx, cy, r) => `<path d="M${cx - r} ${cy} A${r} ${r} 0 1 0 ${cx + r} ${cy}" fill="none" stroke="${METAL}" stroke-width="1" stroke-linecap="round"/>`;
+  const stud = (x, y) => `<circle cx="${x}" cy="${y}" r=".95" fill="${METAL}" stroke="${METAL_D}" stroke-width=".35"/>`;
+  const piercing = [
+    "",
+    ring(c.n === 1 ? 52.6 : 52.2, 58.2, 1.5),                       // aro en la nariz
+    `<path d="M48.3 58.8 Q48.3 61.6 50 61.6 Q51.7 61.6 51.7 58.8" fill="none" stroke="${METAL}" stroke-width="1" stroke-linecap="round"/>${stud(48.3, 58.8)}${stud(51.7, 58.8)}`, // septum
+    stud(61.4, 39.4) + stud(63.6, 40.4),                             // ceja
+    ring(54.8, 66.4, 1.6),                                          // labio
+  ][c.pc || 0];
+  const mole = ["", `<circle cx="63" cy="61" r="1" fill="#4A2A1A" opacity=".75"/>`, `<circle cx="56.6" cy="60.2" r=".95" fill="#4A2A1A" opacity=".8"/>`, `<circle cx="35.4" cy="54" r=".95" fill="#4A2A1A" opacity=".75"/>`][c.mo || 0];
   const shadow = c.sh ? `<ellipse cx="41" cy="46.8" rx="5.6" ry="3" fill="${SHADOW[c.sh - 1]}" opacity=".62"/><ellipse cx="59" cy="46.8" rx="5.6" ry="3" fill="${SHADOW[c.sh - 1]}" opacity=".62"/>` : "";
   const linerFor = (x, o) => `<path d="M${x - o * 4.5} ${50 - 1.7} Q${x} ${50 - 5.4} ${x + o * 4.6} ${50 - 2.6} L${x + o * 6.8} ${50 - 4.4}" fill="none" stroke="${INK}" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>`;
   const liner = c.li ? linerFor(41, -1) + linerFor(59, 1) : "";
@@ -591,9 +669,9 @@ function personSvg(c, gid) {
     ${cl.art}
     <rect x="43" y="63" width="14" height="17" rx="6" fill="${shade}" ${cl.noNeck ? 'opacity="0"' : ""}/>
     <ellipse cx="${50 - earX - 0.2}" cy="53" rx="4" ry="5" fill="${skin}"/><ellipse cx="${50 + earX + 0.2}" cy="53" rx="4" ry="5" fill="${skin}"/>
-    ${earrings}${head}${blush}${freckles}${facial}${hf}${brows}${shadow}
+    ${earrings}${head}${blush}${freckles}${mole}${facial}${hf}${brows}${shadow}
     ${eyeArt(c.e, 41, 50, 1.1, ec, skin, false)}${eyeArt(c.e, 59, 50, 1.1, ec, skin, true)}${liner}
-    ${nose}${mouthArt(c.m, c.lp ? LIPS[c.lp - 1] : null)}
+    ${nose}${mouthArt(c.m, c.lp ? LIPS[c.lp - 1] : null)}${piercing}
     ${glassesArt(c.g, 41, 59, 50)}${hatArt(c.ht, BG_COLORS[c.hv], hatFit.dy, hatFit.sx)}${exclusiveFront(c, gid)}`;
 }
 
@@ -739,7 +817,8 @@ export function buildCharacterEditor(container, state, onChange, opts = {}) {
     if (f.onPick) applySpeciesDefaults(c); // cada animal se muestra con sus colores naturales
     const name = f.type === "bool" ? (i ? "Sí" : "No") : f.names[i];
     const thumb = f.type === "bool" && !i ? `<span class="cc-none" aria-hidden="true">∅</span>` : characterSvg(c, 52, bg, f.crop);
-    return `<button type="button" class="cc-tile" role="radio" aria-checked="${cur()[f.key] === i}" data-key="${f.key}" data-val="${i}" title="${esc(name)}" aria-label="${esc(f.label)}: ${esc(name)}">${thumb}<span class="cc-tile-name">${esc(name)}</span></button>`;
+    const isNew = f.isNew != null && i >= f.isNew;
+    return `<button type="button" class="cc-tile${isNew ? " is-new" : ""}" role="radio" aria-checked="${cur()[f.key] === i}" data-key="${f.key}" data-val="${i}" title="${esc(name)}" aria-label="${esc(f.label)}: ${esc(name)}">${isNew ? '<span class="cc-new" aria-hidden="true">Nuevo</span>' : ""}${thumb}<span class="cc-tile-name">${esc(name)}</span></button>`;
   }
   function swatches(f) {
     const colors = f.colors;
