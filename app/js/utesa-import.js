@@ -379,7 +379,8 @@ export function initUtesaImport(context) {
     const codes = [...document.querySelectorAll("#utesa-results input[type=checkbox]:checked:not(:disabled)")].map(i => i.value);
     closeModal();
     $("utesa-paste").value = "";
-    const counts = lastCounts, pending = lastPending, viaBookmark = lastFromBookmark;
+    // con datos llegados por enlace (#utesa=), solo se verifica si la persona confirma que salieron de SU marcador
+    const counts = lastCounts, pending = lastPending, viaBookmark = lastFromBookmark && !!$("utesa-verify-chk")?.checked;
     lastCounts = null; lastPending = null; lastFromBookmark = false;
     await ctx.onApply(codes, { counts });
     if (viaBookmark && pending && pending.length) verifyWithBookmark(pending, counts); // el marcador también verifica (con controles en el servidor)
@@ -400,6 +401,8 @@ export function initUtesaImport(context) {
       $("utesa-paste").value = text;
       lastFromBookmark = true;
       analyze(text);
+      // aviso: cualquiera puede armar un enlace así; la verificación de logros queda desmarcada por defecto
+      $("utesa-summary")?.insertAdjacentHTML("beforeend", `<label class="utesa-origin"><input type="checkbox" id="utesa-verify-chk"><span><b>Estos datos llegaron por un enlace.</b> Si los enviaste tú con tu marcador desde el portal de UTESA, marca esta casilla para verificar también tus logros. Si alguien te pasó este enlace, no la marques y revisa bien la lista.</span></label>`);
     }
   }
 }

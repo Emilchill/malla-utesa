@@ -9,8 +9,10 @@ merge a main ──► Cloudflare Pages (conectado a este repo) ──► build 
 * El proyecto de Cloudflare Pages **`malla-utesa`** está **conectado directamente a este repositorio de GitHub** (desde 2026-11-18;
   antes era "Direct Upload" y se desplegaba con GitHub Actions). Cada push a `main` dispara un build y publica en producción.
 * Las ramas y Pull Requests **no** se publican en producción: Cloudflare crea vistas previas (*Preview*) en `https://<rama>.malla-utesa.pages.dev`.
-  Esas vistas previas usan la misma base D1 de producción (no hay base de pruebas): no pruebes en ellas con datos que no quieras en producción,
-  y trátalas como públicas (el chat es el real). Para probar cambios usa `npm run dev` en local.
+  **Qué base de datos usan depende del panel**, no del código: el binding `DB` se configura por entorno (Production / Preview) en
+  Settings → Bindings. Al recrear el proyecto el 2026-11-18 se añadió **solo en Production**; si Preview no tiene `DB`, las vistas previas
+  responden 503 en `/api/*` (el worker no toca datos) y solo sirven para ver la interfaz. **Compruébalo** con el selector en *Preview*:
+  si alguna vez se añade `DB` ahí, las ramas correrían contra los datos reales. Para probar cambios usa `npm run dev` en local.
 * **Configuración de build** (Cloudflare → malla-utesa → Settings → Build):
   * Comando de build: `sed -i -E "s/\?v=[0-9A-Za-z]+/?v=$(printf %.8s "$CF_PAGES_COMMIT_SHA")/g" app/*.html` (cache-busting automático:
     pone el commit en los `?v=` de los HTML). Ojo: el `sh` de Cloudflare **no** admite `${VAR:0:8}` (falla con "Bad substitution").

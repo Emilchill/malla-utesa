@@ -30,6 +30,14 @@ function limited(key, max, windowMs) {
   return false;
 }
 
+/** Marcas recientes de una clave sin sumar una nueva (para contar solo los fallos). */
+function recentHits(key, windowMs) {
+  const now = Date.now();
+  const list = (hits.get(key) || []).filter(t => now - t < windowMs);
+  hits.set(key, list);
+  return list;
+}
+
 /* ---------- Respuestas ---------- */
 function reply(status, body) {
   return new Response(JSON.stringify(body), {
@@ -147,7 +155,12 @@ async function login(request, env) {
   if (!password || password.length > 128) return fail(400, "entrada", "Escribe tu contraseña de UTESA.");
 
   const ip = (request.headers.get("cf-connecting-ip") || "desconocida").trim();
-  if (limited(`m:${matricula}`, 5, 15 * 60 * 1000) || limited(`ip:${ip}`, 20, 60 * 60 * 1000)) {
+  // · 5 intentos cada 15 min por (cuenta, matrícula): nadie consume el cupo de otra persona con su propia cuenta.
+  // · 10 contraseñas FALLIDAS por hora por matrícula (de cualquiera): frena el adivinado; solo cuentan los 401 reales de UTESA.
+  // · 20 por hora por IP. (Los contadores viven en la memoria de cada instancia del Worker: es de mejor esfuerzo.)
+  const failKey = `mf:${matricula}`;
+  if (recentHits(failKey, 60 * 60 * 1000).length >= 10) return fail(429, "limite", "Demasiados intentos fallidos con esta matrícula. Espera un rato antes de volver a intentar.");
+  if (limited(`um:${vuid}:${matricula}`, 5, 15 * 60 * 1000) || limited(`ip:${ip}`, 20, 60 * 60 * 1000)) {
     return fail(429, "limite", "Demasiados intentos. Espera unos minutos antes de volver a intentar.");
   }
 
@@ -160,7 +173,10 @@ async function login(request, env) {
 
     const pend = await get(`${BASE}asignaturas-pendientes.aspx`, jar);
     const pending = pend.status === 200 ? parsePending(pend.html) : null;
-    if (!pending) return fail(401, "credenciales", "No pudimos iniciar sesión en UTESA. Revisa tu recinto, matrícula y contraseña.");
+    if (!pending) {
+      recentHits(failKey, 60 * 60 * 1000).push(Date.now()); // solo un fallo real cuenta contra la matrícula
+      return fail(401, "credenciales", "No pudimos iniciar sesión en UTESA. Revisa tu recinto, matrícula y contraseña.");
+    }
 
     let counts = { aprob: null, insc: null, pend: null };
     try {
@@ -285,12 +301,28 @@ const CAREERS = new Set(["ISC", "IEL", "IID", "IET", "IMC", "ICV", "ARQ", "DER",
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
 let jwks = { keys: [], at: 0 };
+let jwksInflight = null, jwksForcedAt = 0;
+/**
+ * Claves públicas de Google (caché de 1 h). Una "kid" desconocida fuerza una recarga, pero como mucho UNA por minuto
+ * y compartida entre peticiones simultáneas: así un token falso con kid al azar no provoca una descarga por petición.
+ * La descarga tiene tiempo límite y la caché solo se reemplaza si funciona.
+ */
 async function googleKeys(force) {
-  if (!force && jwks.keys.length && Date.now() - jwks.at < 3600e3) return jwks.keys;
-  const r = await fetch(JWKS_URL);
-  if (!r.ok) throw new Error("jwks");
-  jwks = { keys: (await r.json()).keys || [], at: Date.now() };
-  return jwks.keys;
+  const fresh = jwks.keys.length && Date.now() - jwks.at < 3600e3;
+  if (!force && fresh) return jwks.keys;
+  if (force && jwks.keys.length && Date.now() - jwksForcedAt < 60e3) return jwks.keys;
+  if (force) jwksForcedAt = Date.now();
+  if (!jwksInflight) {
+    jwksInflight = (async () => {
+      try {
+        const r = await fetch(JWKS_URL, { signal: AbortSignal.timeout(5000) });
+        if (!r.ok) throw new Error("jwks");
+        jwks = { keys: (await r.json()).keys || [], at: Date.now() };
+        return jwks.keys;
+      } finally { jwksInflight = null; }
+    })();
+  }
+  return jwksInflight;
 }
 const b64u = (s) => { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
 const jsonOf = (s) => JSON.parse(new TextDecoder().decode(b64u(s)));
@@ -528,8 +560,12 @@ async function userApi(request, env) {
       if (f.career && f.career !== row.career) { f.earned = "[]"; f.verified_at = null; f.verified_pending = null; f.frame = null; } // otra carrera: los logros se verifican de nuevo
       const cols = Object.keys(f);
       if (cols.length) {
-        await env.DB.prepare(`UPDATE users SET ${cols.map(c => `${c} = ?`).join(", ")}, updated_at = ? WHERE uid = ?`)
+        // si se guarda algo del equipo (marco MOD o artículo exclusivo), la propia escritura exige que siga siendo del equipo:
+        // así una degradación simultánea no puede quedar pisada por esta petición
+        const staffOnly = (f.frame && f.frame.startsWith("MOD-")) || (f.avatar && hasExcl(f.avatar));
+        const w = await env.DB.prepare(`UPDATE users SET ${cols.map(c => `${c} = ?`).join(", ")}, updated_at = ? WHERE uid = ?${staffOnly ? " AND (is_mod = 1 OR is_owner = 1)" : ""}`)
           .bind(...cols.map(c => f[c]), now, uid).run();
+        if (staffOnly && !(w.meta && w.meta.changes)) return fail(403, "exclusivo", "Esos artículos son exclusivos del equipo de moderación.");
       }
     }
     return reply(200, { ok: true });
@@ -656,10 +692,10 @@ async function chatApi(request, env, sub) {
     const cols = "m.id, m.text, m.created_at, m.hidden, m.hidden_by, m.edited_at, u.pid, u.name, u.career, u.avatar, u.avatar_bg, u.frame, u.verified_at, u.verified_pending, u.is_mod, u.is_owner";
     if (since > 0) {
       // cambios en mensajes que el chat ya tiene: ocultados (ahora quedan como "mensaje borrado") y editados
-      const rm = await env.DB.prepare(`SELECT ${cols} FROM messages m JOIN users u ON u.uid = m.uid WHERE m.room = ? AND m.hidden = 1 AND m.hidden_at > ? AND m.id <= ? ORDER BY m.id DESC LIMIT 60`).bind(room, since, after).all();
+      const rm = await env.DB.prepare(`SELECT ${cols} FROM messages m JOIN users u ON u.uid = m.uid WHERE m.room = ? AND m.hidden = 1 AND m.hidden_at > ? AND m.id <= ? AND (u.pid IS NULL OR u.pid NOT IN (SELECT blocked_pid FROM blocks WHERE uid = ?)) ORDER BY m.id DESC LIMIT 60`).bind(room, since, after, uid).all();
       removed = rm.results.map(r => r.id);
       hiddenNow = rm.results.map(r => msgOut(r, admin));
-      const ed = await env.DB.prepare(`SELECT ${cols} FROM messages m JOIN users u ON u.uid = m.uid WHERE m.room = ? AND m.hidden = 0 AND m.edited_at > ? AND m.id <= ? ORDER BY m.id DESC LIMIT 60`).bind(room, since, after).all();
+      const ed = await env.DB.prepare(`SELECT ${cols} FROM messages m JOIN users u ON u.uid = m.uid WHERE m.room = ? AND m.hidden = 0 AND m.edited_at > ? AND m.id <= ? AND (u.pid IS NULL OR u.pid NOT IN (SELECT blocked_pid FROM blocks WHERE uid = ?)) ORDER BY m.id DESC LIMIT 60`).bind(room, since, after, uid).all();
       edited = ed.results.map(r => msgOut(r, admin));
     }
     const { results } = await env.DB.prepare(
@@ -685,7 +721,10 @@ async function chatApi(request, env, sub) {
     const now = Date.now();
     const recent = await env.DB.prepare("SELECT COUNT(*) AS n, MAX(created_at) AS last FROM messages WHERE uid = ? AND created_at > ?").bind(uid, now - 60000).first();
     if (recent && (recent.n >= 15 || (recent.last && now - recent.last < 1200))) return fail(429, "limite", "Vas muy rápido. Espera un momento.");
-    const r = await env.DB.prepare("INSERT INTO messages (room, uid, text, created_at) VALUES (?,?,?,?)").bind(room, uid, text, now).run();
+    // el límite va dentro de la inserción: varias peticiones a la vez no pueden pasarse de 15/min ni del 1,2 s entre mensajes
+    const r = await env.DB.prepare("INSERT INTO messages (room, uid, text, created_at) SELECT ?, ?, ?, ? WHERE (SELECT COUNT(*) FROM messages WHERE uid = ? AND created_at > ?) < 15 AND NOT EXISTS (SELECT 1 FROM messages WHERE uid = ? AND created_at > ?)")
+      .bind(room, uid, text, now, uid, now - 60000, uid, now - 1200).run();
+    if (!(r.meta && r.meta.changes)) return fail(429, "limite", "Vas muy rápido. Espera un momento.");
     return reply(200, {
       ok: true, id: r.meta && r.meta.last_row_id, flagged, text, at: now,
       notice: flagged ? "Tu mensaje tenía palabras no permitidas y se enmascaró con asteriscos. Por favor, modera tu forma de hablar: aquí nos respetamos." : null,
@@ -1128,13 +1167,13 @@ async function socialApi(request, env, sub) {
     if (!t) return fail(404, "perfil", "No existe ese perfil.");
     if (t.uid === uid) return fail(400, "entrada", "No puedes cambiarte el rol a ti mismo.");
     if (t.is_owner) return fail(409, "dueno", "El dueño siempre es moderador.");
-    await env.DB.prepare("UPDATE users SET is_mod = ? WHERE uid = ?").bind(body.on ? 1 : 0, t.uid).run();
-    if (!body.on) { // sin rol, pierde los marcos y los artículos exclusivos
-      await env.DB.prepare("UPDATE users SET frame = NULL WHERE uid = ? AND frame LIKE 'MOD-%'").bind(t.uid).run();
+    if (body.on === true) await env.DB.prepare("UPDATE users SET is_mod = 1 WHERE uid = ?").bind(t.uid).run();
+    else { // sin rol pierde, en UNA sola sentencia, el rol, los marcos MOD y los artículos exclusivos
       const av = await env.DB.prepare("SELECT avatar FROM users WHERE uid = ?").bind(t.uid).first();
-      if (av && hasExcl(av.avatar)) await env.DB.prepare("UPDATE users SET avatar = ? WHERE uid = ?").bind(stripExcl(av.avatar), t.uid).run();
+      await env.DB.prepare("UPDATE users SET is_mod = 0, frame = CASE WHEN frame LIKE 'MOD-%' THEN NULL ELSE frame END, avatar = ? WHERE uid = ?")
+        .bind(av && hasExcl(av.avatar) ? stripExcl(av.avatar) : (av ? av.avatar : null), t.uid).run();
     }
-    return reply(200, { ok: true, role: body.on ? "mod" : null });
+    return reply(200, { ok: true, role: body.on === true ? "mod" : null });
   }
 
   return fail(404, "ruta", "No existe.");

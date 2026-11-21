@@ -2156,3 +2156,8 @@ a.wa-btn.btn-primary:hover { background: #178a44; }
   .modal-overlay, .modal-box, .user-menu, .theme-pop, .msg.is-new { animation: none !important; }
   .chip:active, .seg-btn:active { transform: none; }
 }
+
+/* Aviso cuando el importador de UTESA se abre desde un enlace (#utesa=) */
+.utesa-origin { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; font-weight: 400;
+  background: color-mix(in srgb, #E8A317 14%, var(--card)); border: 1px solid color-mix(in srgb, #E8A317 45%, var(--border)); color: var(--text); }
+.utesa-origin input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--primary); }

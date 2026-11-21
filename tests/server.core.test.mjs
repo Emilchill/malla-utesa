@@ -261,4 +261,35 @@ globalThis.__fmt = null;
   globalThis.__carrera = undefined;
 }
 
+// ===== auditoría run-2 (N-03): nadie bloquea la matrícula de otra persona; solo los fallos reales cuentan =====
+{
+  for (const u of ["lia", "max"]) await call("PUT", "/api/user", tok(u), prof("Prueba " + u, "ISC"));
+  let x;
+  for (let i = 0; i < 5; i++) x = await call("POST", "/api/utesa-login", tok("lia"), { matricula: "7000000", recinto: "UTSAN", password: "x" + i }, "6.6.0." + i);
+  x = await call("POST", "/api/utesa-login", tok("lia"), { matricula: "7000000", recinto: "UTSAN", password: "x" }, "6.6.0.9");
+  ok("N-03: la misma cuenta sí topa sus 5 intentos con esa matrícula", x[0] === 429, x[0]);
+  x = await call("POST", "/api/utesa-login", tok("max"), { matricula: "7000000", recinto: "UTSAN", password: "x" }, "6.6.1.1");
+  ok("N-03: otra cuenta con la misma matrícula NO queda bloqueada", x[0] === 200, x[0]);
+  globalThis.__portalFail = true;
+  const codes = [];
+  for (let i = 0; i < 11; i++) { const who = ["nia", "oto", "pam"][i % 3]; x = await call("POST", "/api/utesa-login", tok(who), { matricula: "7100000", recinto: "UTSAN", password: "mal" + i }, "6.6.2." + i); codes.push(x[0]); }
+  ok("N-03: 10 contraseñas fallidas por hora frenan esa matrícula para todos (401 ×10, luego 429)", codes.slice(0, 10).every(c => c === 401) && codes[10] === 429, codes);
+  globalThis.__portalFail = false;
+  x = await call("POST", "/api/utesa-login", tok("max"), { matricula: "7200000", recinto: "UTSAN", password: "x" }, "6.6.3.1");
+  ok("N-03: otra matrícula sigue funcionando", x[0] === 200, x[0]);
+}
+
+// ===== auditoría run-2 (N-02): una kid desconocida no provoca una descarga de claves por petición =====
+{
+  const realFetch = globalThis.fetch;
+  let n = 0;
+  globalThis.fetch = (u, o) => { if (String(u).includes("securetoken")) n++; return realFetch(u, o); };
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  for (let i = 0; i < 25; i++) await call("GET", "/api/user", `${b64({ alg: "RS256", kid: "kid-falsa-" + i })}.${b64({ sub: "x" })}.firma`);
+  globalThis.fetch = realFetch;
+  ok("N-02: 25 tokens con kid al azar causan como mucho 1 descarga de claves", n <= 1, n);
+  const g = await call("GET", "/api/user", tok("lia"));
+  ok("N-02: los tokens válidos siguen funcionando", g[0] === 200, g[0]);
+}
+
 finish();

@@ -56,3 +56,11 @@ refresque. El cliente trata un fallo de aviso como no crítico y sigue por sonde
 * **Reportes:** cada reporte guarda una copia del texto del mensaje. Si el autor lo edita o lo borra después, el equipo sigue viendo el texto original (marcado) hasta archivarlo. Esa copia solo la ven moderadores y dueño, igual que antes el texto del mensaje reportado.
 * **Inicio directo con UTESA:** si el nombre de carrera que muestra el portal corresponde a una carrera distinta de la del perfil, no se otorgan logros ni porcentaje. Si el nombre no se reconoce, sigue rigiendo la regla del 60 %.
 * **Topes:** el máximo de 300 amigos se aplica también al aceptar; los topes de solicitudes pendientes, grupos y miembros son atómicos.
+
+## Cambios del 2026-11-21, segunda tanda
+
+* **Inicio directo:** ya nadie puede bloquear la vinculación de otra persona con intentos desde su propia cuenta (el cupo de 5 es por cuenta y matrícula); por matrícula solo cuentan las contraseñas fallidas (10 por hora). Los contadores siguen en memoria de cada instancia (mejor esfuerzo).
+* **Claves de Google:** una kid desconocida provoca como mucho una recarga por minuto, con tiempo límite.
+* **Chat:** el límite de 15 mensajes/min y 1,2 s va dentro de la inserción; la rama `since` respeta los bloqueos; las recargas por avisos de Firestore se agrupan (máx. 1 cada 1,5 s).
+* **Moderadores:** la degradación quita rol, marco MOD y artículos exclusivos en una sola sentencia, y guardar un marco MOD o un artículo exclusivo exige seguir siendo del equipo en ese instante.
+* **Enlace #utesa:** si el importador se abre desde un enlace, la verificación de logros queda desmarcada y hay que confirmarla.

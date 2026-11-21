@@ -31,6 +31,7 @@ globalThis.fetch = async (u) => {
   if (u.includes("googleapis.com")) return { ok: true, json: async () => ({ keys: [jwk] }) };
   const html = (body) => ({ status: 200, headers: { get: () => null, getSetCookie: () => [] }, text: async () => body });
   if (u.includes("conexion.aspx")) return html("");
+  if (u.includes("asignaturas-pendientes") && globalThis.__portalFail) return html("<p>Sesión no válida</p>"); // contraseña incorrecta simulada
   if (u.includes("asignaturas-pendientes")) {
     const rows = allIsc.filter(c => !approved.has(c)).map(c => `<tr><td>${(globalThis.__fmt || ((x) => x))(c)}</td><td>x</td></tr>`).join("");
     return html(`<input id="txtNombrecar" value="${globalThis.__carrera ?? "Ing"}"><input id="txtPensum" value="2023"><table><tr><th>Cód. Asig.</th><th>Nombre</th></tr>${rows}</table>`);

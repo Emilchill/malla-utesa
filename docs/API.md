@@ -3,7 +3,7 @@
 Todo lo implementa `app/_worker.js`. Convenciones:
 
 * **Autenticación**: cabecera `Authorization: Bearer <ID token de Firebase>`. Sin token válido → `401` (`code: "sesion"`).
-  `/api/utesa-login` también exige token (401 `sesion` sin él) y limita a 10 intentos/hora por cuenta.
+  `/api/utesa-login` también exige token (401 `sesion` sin él). Límites: 10 intentos/hora por cuenta, 5 cada 15 min por (cuenta, matrícula), 20/hora por IP y, por matrícula, 10 contraseñas **fallidas** por hora (de cualquiera; solo cuentan los 401 reales de UTESA). Si el portal muestra una carrera distinta de la del perfil, responde `verified.mismatch` con `portalCareer` y no otorga logros.
 * **Escrituras** (POST/PUT/PATCH/DELETE): además exigen `Origin` igual al host (si no, `403 origen`).
 * **Respuestas**: `{ ok: true, … }` o `{ ok: false, code, message }` (`message` en español, listo para mostrar).
 * **Códigos frecuentes**: `400 entrada`, `401 sesion`, `403 permiso|origen|exclusivo|bloqueo`, `403 eliminada` (cuenta borrada/baneada),

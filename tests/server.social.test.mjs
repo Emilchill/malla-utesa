@@ -449,4 +449,33 @@ r = await call("POST", "/api/groups", tok("fay"), { action: "create", name: "Onc
 ok("N-12: el grupo número 11 se rechaza (429)", r[0] === 429 && r[1].code === "limite", r);
 ok("N-12: ... y Fay tiene exactamente 10 grupos", sq.prepare("SELECT COUNT(*) AS n FROM chat_groups WHERE owner_uid = 'fay'").get().n === 10);
 
+// N-11: el límite de mensajes no se salta con peticiones en paralelo
+await sleep(1300);
+const burst = await Promise.all(Array.from({ length: 12 }, (_, i) => call("POST", "/api/chat", tok("ivy"), { room: "general", text: "ráfaga " + i })));
+ok("N-11: de 12 mensajes enviados a la vez solo pasa 1 (los demás 429)", burst.filter(x => x[0] === 200).length === 1 && burst.filter(x => x[0] === 429).length === 11, burst.map(x => x[0]));
+
+// N-16: la rama since también oculta lo editado por alguien bloqueado
+await sleep(1300);
+r = await call("POST", "/api/chat", tok("gus"), { room: "general", text: "mensaje de Gus" });
+const gusMsg = r[1].id;
+await call("POST", "/api/chat/block", tok("hal"), { pid: pid.gus, on: true });
+const since0 = Date.now() - 1;
+await sleep(5);
+await call("PATCH", "/api/chat", tok("gus"), { id: gusMsg, text: "mensaje de Gus editado" });
+r = await call("GET", `/api/chat?room=general&since=${since0}&after=${gusMsg + 100}`, tok("hal"));
+ok("N-16: quien bloqueó no recibe el mensaje editado del bloqueado", r[0] === 200 && !r[1].edited.some(m => m.id === gusMsg), r[1].edited.map(m => m.id));
+r = await call("GET", `/api/chat?room=general&since=${since0}&after=${gusMsg + 100}`, tok("ivy"));
+ok("N-16: los demás sí lo reciben", r[1].edited.some(m => m.id === gusMsg), r[1].edited.map(m => m.id));
+
+// N-09: si lo degradan mientras guarda su perfil, no se queda con el marco MOD
+await call("POST", "/api/mods", bossTok(), { pid: pid.dan, on: true });
+const realPrepare = env.DB.prepare;
+env.DB.prepare = (q) => { if (q.startsWith("UPDATE users SET frame")) sq.prepare("UPDATE users SET is_mod = 0 WHERE uid = 'dan'").run(); return realPrepare.call(env.DB, q); };
+r = await call("PUT", "/api/user", tok("dan"), { fields: { frame: "MOD-1" } });
+env.DB.prepare = realPrepare;
+const danRow = sq.prepare("SELECT frame, is_mod FROM users WHERE uid = 'dan'").get();
+ok("N-09: degradado a mitad del guardado -> 403 y sin marco MOD", r[0] === 403 && danRow.frame !== "MOD-1" && danRow.is_mod === 0, { status: r[0], ...danRow });
+r = await call("POST", "/api/mods", bossTok(), { pid: pid.dan, on: "false" });
+ok("N-09: 'on' solo cuenta si es true de verdad (el texto \"false\" no nombra moderador)", r[1].role === null && sq.prepare("SELECT is_mod FROM users WHERE uid = 'dan'").get().is_mod === 0, r[1]);
+
 finish();

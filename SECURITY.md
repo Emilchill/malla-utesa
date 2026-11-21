@@ -36,7 +36,7 @@ Recomendado en la consola de Google Cloud: restringir la API key a los dominios 
   (ver `CONTRIBUTING.md`). Si algún día hay GitHub Pro: activa protección de `main` (PR obligatorio + check `check-and-test`).
 * Cloudflare accede al repo mediante la app de GitHub **Cloudflare Workers and Pages**, instalada solo en `Emilchill/malla-utesa`
   (revisable en GitHub → Settings → Applications). Ya **no hay token de Cloudflare guardado en GitHub**.
-* Las vistas previas (*Preview*) de ramas y PRs usan la base D1 de producción: no las compartas como si fueran un entorno de pruebas.
+* Las vistas previas (*Preview*) de ramas y PRs **no deben** tener el binding `DB` de producción (se configura por entorno en Cloudflare → Settings → Bindings). Sin él responden 503 en `/api/*`. Revísalo de vez en cuando con el selector en *Preview*.
 * `npm run check:secrets` (también dentro de `npm run check` y del CI) escanea el repo buscando tokens y claves privadas conocidos.
   Es una red de seguridad, no una garantía: revisa tú mismo lo que subes.
 * Dependencias: el proyecto casi no tiene (el worker y el frontend no usan paquetes); eso reduce mucho la superficie de ataque. Mantenlo así.

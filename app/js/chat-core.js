@@ -1,7 +1,7 @@
 // chat-core.js — el chat de la comunidad como pieza reutilizable.
 // Lo usan el cuadro fijo del panel (chat-dock.js) y la página completa (chat.js).
 //
-//  · Dos salas: "General" y "Mi carrera" (solo estudiantes de esa carrera; el servidor lo impone).
+//  · Dos salas: "General" y "Mi carrera" (la de la carrera que cada quien tiene en su perfil).
 //  · En vivo: cada envío o borrado avisa por Firestore (chat-live.js) y todos reciben el cambio al instante.
 //    Un sondeo de respaldo (6 s, o 30 s si el modo en vivo funciona) cubre cualquier fallo.
 //  · Mensajes nuevos con el chat cerrado o la pestaña oculta cuentan como "sin leer".
@@ -227,7 +227,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     }
     const empty = list.querySelector(".chat-empty");
     if (!st.msgs.size) {
-      if (!empty) list.innerHTML = `<div class="chat-empty">${ICON_CHAT}<strong>${st.group ? "Grupo nuevo" : st.dm ? "Chat privado" : active === "general" ? "Aún no hay mensajes" : "Sala de tu carrera"}</strong><span>${st.group ? "Escribe el primer mensaje del grupo." : st.dm ? `Aquí solo escriben tú y ${esc(st.peer.name)}. ¡Saluda!` : active === "general" ? "Sé la primera persona en escribir." : "Solo estudiantes de tu carrera pueden verla. ¡Rompe el hielo!"}</span></div>`;
+      if (!empty) list.innerHTML = `<div class="chat-empty">${ICON_CHAT}<strong>${st.group ? "Grupo nuevo" : st.dm ? "Chat privado" : active === "general" ? "Aún no hay mensajes" : "Sala de tu carrera"}</strong><span>${st.group ? "Escribe el primer mensaje del grupo." : st.dm ? `Aquí solo escriben tú y ${esc(st.peer.name)}. ¡Saluda!` : active === "general" ? "Sé la primera persona en escribir." : "Aquí conversan quienes tienen esta carrera en su perfil. ¡Rompe el hielo!"}</span></div>`;
     } else if (empty) empty.remove();
     regroup();
     if (appended) {
@@ -341,6 +341,15 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
 
   /* ---------- personas: amigos, solicitudes y directorio ---------- */
   const sumUnread = () => { social.unread = social.friends.reduce((n, f) => n + (isMuted("dm:" + f.pid) ? 0 : f.unread || 0), 0); };
+  /** Agrupa llamadas seguidas: la primera sale enseguida y las demás se juntan en una sola, como mucho cada `ms`. */
+  function soon(fn, ms = 1500) {
+    let timer = null, last = 0;
+    return () => {
+      if (timer) return;
+      timer = setTimeout(() => { timer = null; last = Date.now(); if (!destroyed) fn(); }, Math.max(0, last + ms - Date.now()));
+    };
+  }
+
   async function loadSocial() {
     if (destroyed) return;
     try {
@@ -501,7 +510,8 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     groupKey = key;
     stopGroups?.(); stopGroups = null;
     if (!ids.length) return;
-    const h = await subscribe(ids, (id) => { const k = "g:" + id.slice(2); if (ROOMS[k]) fetchRoom(k); loadGroups(); }, () => {});
+    const groupsSoon = soon(loadGroups); // varios avisos seguidos = una sola recarga de la lista de grupos
+    const h = await subscribe(ids, (id) => { const k = "g:" + id.slice(2); if (ROOMS[k]) fetchRoom(k); groupsSoon(); }, () => {});
     if (destroyed || key !== groupKey) h.stop(); else stopGroups = h.stop;
   }
   async function loadGroups() {
@@ -542,7 +552,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
   function renderHome() {
     const pub = [
       { key: "general", name: "General", sub: "Todos los estudiantes", av: pubAv("🌎", 46), unread: ROOMS.general.unread },
-      { key: "carrera", name: career ? career.nombre : "Mi carrera", sub: "Solo tu carrera", av: pubAv("🎓", 46), unread: ROOMS.carrera.unread },
+      { key: "carrera", name: career ? career.nombre : "Mi carrera", sub: "Sala de tu carrera", av: pubAv("🎓", 46), unread: ROOMS.carrera.unread },
     ];
     const conv = [
       ...social.groups.map(g => ({ key: "g:" + g.id, name: g.name, sub: `Grupo · ${g.n} miembro${g.n === 1 ? "" : "s"}${g.role === "admin" ? " · Admin" : ""}`, av: groupAv(g.name, 46), unread: g.unread, at: g.lastAt })),
@@ -638,7 +648,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
       title = st.label;
       if (st.dm) { const f = social.friends.find(x => x.pid === st.peer.pid) || {}; av = avDot({ ...st.peer, seen: f.seen }, 34); sub = presenceText(f); }
       else if (st.group) { const g = social.groups.find(x => x.id === st.gid); sub = g ? `${g.n} miembro${g.n === 1 ? "" : "s"} · toca ⓘ para ver` : "Grupo"; av = groupAv(title, 34); info = `<button type="button" class="chat-info" data-ginfo="${st.gid}" aria-label="Información del grupo" title="Información del grupo">ⓘ</button>`; }
-      else { av = pubAv(active === "general" ? "🌎" : "🎓", 34); sub = active === "general" ? "Todos los estudiantes" : "Solo tu carrera"; }
+      else { av = pubAv(active === "general" ? "🌎" : "🎓", 34); sub = active === "general" ? "Todos los estudiantes" : "Sala de tu carrera"; }
     }
     const mkey = st ? active : "";
     const mute = mkey ? `<button type="button" class="chat-mute${isMuted(mkey) ? " is-off" : ""}" data-mute="${esc(mkey)}" aria-label="${isMuted(mkey) ? "Activar avisos de este chat" : "Silenciar este chat"}" title="${isMuted(mkey) ? "Silenciado: toca para activar los avisos" : "Silenciar este chat"}">${isMuted(mkey) ? "🔕" : "🔔"}</button>` : "";
@@ -968,7 +978,9 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
   })();
   (async () => { // bandeja personal: mensajes privados, solicitudes y respuestas llegan al instante
     if (!me.pid) return;
-    const h = await subscribe([me.pid], async () => { await loadSocial(); loadGroups(); if (ROOMS[active]?.dm) fetchRoom(active); }, () => {}, "inbox");
+    // la bandeja personal la puede "tocar" cualquier cuenta: como mucho una recarga cada 1,5 s, por muchos avisos que lleguen
+    const inboxSoon = soon(async () => { await loadSocial(); loadGroups(); if (ROOMS[active]?.dm) fetchRoom(active); });
+    const h = await subscribe([me.pid], inboxSoon, () => {}, "inbox");
     stopInbox = h.stop;
   })();
   const editTimer = setInterval(() => { // el botón "Editar" desaparece a los 5 minutos
