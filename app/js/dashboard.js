@@ -4,6 +4,7 @@ import { loadUser, saveUser as saveUserRemote } from "./store.js";
 import { PENSUMS } from "./pensums-data.js";
 import { applyTheme, getLocalTheme, setLocalTheme, buildThemePicker } from "./theme.js";
 import { renderMallaGraph } from "./malla-view.js";
+import { buildPrintSheet } from "./print-sheet.js";
 import { renderCharts } from "./charts-view.js";
 import { avatarSvg } from "./avatars.js";
 import { framedAvatar } from "./frames.js";
@@ -864,23 +865,47 @@ function renderPrintHeader() {
   `;
 }
 
+/** Hoja de una página con el formato clásico de malla (cuatrimestres en romanos, HT·HP·TH·CR, flechas) y el progreso. */
+function renderPrintSheet() {
+  if (!pensum) return false;
+  let el = document.getElementById("print-sheet");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "print-sheet";
+    el.className = "print-sheet";
+    el.setAttribute("aria-hidden", "true");
+    document.getElementById("app")?.prepend(el);
+  }
+  el.innerHTML = buildPrintSheet({
+    pensum,
+    done: doneSet,
+    isUnlocked: (m) => isUnlockedIn(m, doneSet),
+    prereqsOf: getPrereqCodes,
+    name: userData?.name || "",
+    stats: computeStats(),
+  });
+  return true;
+}
+
 function initPrint() {
   let saved = null;
   const prepare = () => {
     if (saved) return;
     saved = { viewMode, activeFilter, searchTerm };
-    // Siempre se imprime la malla completa, sin filtros
+    document.getElementById("detail-sheet")?.classList.remove("show");
+    // Se imprime la hoja de una página; si por algo no se puede armar, queda la malla de siempre
+    if (renderPrintSheet()) { document.body.classList.add("has-sheet"); return; }
     viewMode = "malla"; activeFilter = "all"; searchTerm = "";
     document.body.classList.add("is-printing");
-    document.getElementById("detail-sheet")?.classList.remove("show");
     render();
   };
   const restore = () => {
     if (!saved) return;
+    const wasSheet = document.body.classList.contains("has-sheet");
     ({ viewMode, activeFilter, searchTerm } = saved);
     saved = null;
-    document.body.classList.remove("is-printing");
-    render();
+    document.body.classList.remove("is-printing", "has-sheet");
+    if (!wasSheet) render();
   };
   window.addEventListener("beforeprint", prepare);
   window.addEventListener("afterprint", restore);
