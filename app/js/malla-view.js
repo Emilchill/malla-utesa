@@ -18,9 +18,17 @@ const MAX_SCALE = 1.8;
 /** Estado de la cámara: se conserva entre repintados (al marcar materias, filtrar, etc.). */
 const view = { scale: null, left: 0, keep: false };
 
-let resizeObs = null;
+let observers = [];      // ResizeObservers del último repintado (se desconectan al repintar)
 let lastCtx = null;
+let lastGraph = null;    // grafo de requisitos del último repintado (se arma una sola vez)
 let selectedCode = null; // materia cuya ruta está resaltada (solo se cambia con clics)
+
+function observe(el, fn) {
+  if (!el || !("ResizeObserver" in window)) return;
+  const o = new ResizeObserver(fn);
+  o.observe(el);
+  observers.push(o);
+}
 
 function esc(str) {
   return String(str).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -98,7 +106,10 @@ const ICONS = {
 const icon = (k) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]}</svg>`;
 
 export function renderMallaGraph(container, ctx) {
+  observers.forEach(o => o.disconnect());
+  observers = [];
   lastCtx = ctx;
+  lastGraph = buildGraph(ctx);
   const { pensum } = ctx;
   const cuats = pensum.cuatrimestres;
   const bands = [];
@@ -117,28 +128,28 @@ export function renderMallaGraph(container, ctx) {
         <span><i class="lg lg-done">✓</i>Aprobada</span>
         <span><i class="lg lg-open"></i>Disponible</span>
         <span><i class="lg lg-lock"></i>Bloqueada</span>
-        <span class="mg-hint-tip">Toca una materia para ver su ruta · toca de nuevo o el fondo para quitarla · arrastra para moverte · pellizca o usa + / − para el zoom</span>
+        <span class="mg-hint-tip">Toca una materia para ver su ruta · arrastra para moverte · Ctrl + rueda o pellizca para el zoom</span>
       </div>
-      <nav class="mg-jump" aria-label="Ir a un cuatrimestre">
-        ${cuats.map(c => {
-          const reales = c.materias.filter(m => m.c !== "ELECTIVA");
-          const done = reales.filter(m => ctx.effSet.has(m.c)).length;
-          const full = reales.length > 0 && done === reales.length;
-          return `<button type="button" class="mg-jump-btn${full ? " is-full" : done ? " is-part" : ""}" data-jump="${c.n}" aria-label="Cuatrimestre ${c.n}: ${done} de ${reales.length}">${c.n}</button>`;
-        }).join("")}
-        ${electivas.length ? '<button type="button" class="mg-jump-btn mg-jump-el" data-jump-el aria-label="Electivas">EL</button>' : ""}
-      </nav>
-      <div class="mg-viewport">
+      <div class="mg-bar">
+        <nav class="mg-jump" aria-label="Ir a un cuatrimestre">
+          ${cuats.map(c => {
+            const reales = c.materias.filter(m => m.c !== "ELECTIVA");
+            const done = reales.filter(m => ctx.effSet.has(m.c)).length;
+            const full = reales.length > 0 && done === reales.length;
+            return `<button type="button" class="mg-jump-btn${full ? " is-full" : done ? " is-part" : ""}" data-jump="${c.n}" aria-label="Cuatrimestre ${c.n}: ${done} de ${reales.length}">${c.n}</button>`;
+          }).join("")}
+          ${electivas.length ? '<button type="button" class="mg-jump-btn mg-jump-el" data-jump-el aria-label="Electivas">EL</button>' : ""}
+        </nav>
         <div class="mg-controls" role="group" aria-label="Zoom del mapa">
-          <div class="mg-ctl-bar">
-            <button type="button" class="mg-ctl" data-zoom="in" aria-label="Acercar">${icon("plus")}</button>
-            <button type="button" class="mg-ctl mg-zoom-val" data-zoom="reset" aria-label="Restablecer zoom">100%</button>
-            <button type="button" class="mg-ctl" data-zoom="out" aria-label="Alejar">${icon("minus")}</button>
-            <span class="mg-ctl-sep"></span>
-            <button type="button" class="mg-ctl" data-zoom="fit" aria-label="Ver todo el mapa" title="Ver todo">${icon("fit")}</button>
-            <button type="button" class="mg-ctl" data-zoom="me" aria-label="Ir a mi progreso" title="Mi progreso">${icon("me")}</button>
-          </div>
+          <button type="button" class="mg-ctl" data-zoom="out" aria-label="Alejar">${icon("minus")}</button>
+          <button type="button" class="mg-ctl mg-zoom-val" data-zoom="reset" aria-label="Restablecer zoom">100%</button>
+          <button type="button" class="mg-ctl" data-zoom="in" aria-label="Acercar">${icon("plus")}</button>
+          <span class="mg-ctl-sep"></span>
+          <button type="button" class="mg-ctl" data-zoom="fit" aria-label="Ver todo el mapa" title="Ver todo">${icon("fit")}</button>
+          <button type="button" class="mg-ctl" data-zoom="me" aria-label="Ir a mi progreso" title="Mi progreso">${icon("me")}</button>
         </div>
+      </div>
+      <div class="mg-viewport">
         <div class="mg-scroll">
           <div class="mg-zoom">
             <div class="mg-track">
@@ -171,12 +182,21 @@ export function renderMallaGraph(container, ctx) {
   drawLines(container, ctx);
   applySelection(container);
 
-  if (resizeObs) resizeObs.disconnect();
+  // si cambia el tamaño natural del mapa (fuentes que cargan, ventana), se redibujan los caminos una vez por cuadro
   const track = container.querySelector(".mg-track");
-  if (track && "ResizeObserver" in window) {
-    resizeObs = new ResizeObserver(() => drawLines(container, lastCtx));
-    resizeObs.observe(track);
-  }
+  let size = track ? `${track.offsetWidth}x${track.offsetHeight}` : "";
+  let raf = 0;
+  observe(track, () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const s = `${track.offsetWidth}x${track.offsetHeight}`;
+      if (s === size) return;
+      size = s;
+      drawLines(container, lastCtx);
+      container.dispatchEvent(new Event("mg:resize"));
+    });
+  });
 }
 
 /* posición horizontal de una columna dentro del contenido desplazable */
@@ -195,15 +215,26 @@ function wireZoom(container) {
   if (!sc || !zoomEl || !track) return;
 
   let ready = false;
+  // tamaño natural del mapa (sin zoom): se mide solo cuando cambia, no en cada paso del zoom
+  let nat = { w: track.offsetWidth, h: track.offsetHeight };
+  const measure = () => { nat = { w: track.offsetWidth, h: track.offsetHeight }; };
 
   const apply = () => {
     track.style.scale = String(view.scale);
-    const w = track.offsetWidth, h = track.offsetHeight; // tamaño natural (sin zoom)
-    if (w && h) {
-      zoomEl.style.width = `${Math.ceil(w * view.scale)}px`;
-      zoomEl.style.height = `${Math.ceil(h * view.scale)}px`;
+    if (nat.w && nat.h) {
+      zoomEl.style.width = `${Math.ceil(nat.w * view.scale)}px`;
+      zoomEl.style.height = `${Math.ceil(nat.h * view.scale)}px`;
     }
     if (label) label.textContent = `${Math.round(view.scale * 100)}%`;
+  };
+  container.addEventListener("mg:resize", () => { measure(); apply(); });
+
+  // durante un gesto de zoom el mapa va en su propia capa (más fluido); al terminar vuelve a nitidez normal
+  let gestureTimer = 0;
+  const gesture = () => {
+    sc.classList.add("is-zooming");
+    clearTimeout(gestureTimer);
+    gestureTimer = setTimeout(() => sc.classList.remove("is-zooming"), 180);
   };
 
   /** Cambia el zoom manteniendo fijo el punto bajo el dedo / cursor (fx, en px dentro del visor). */
@@ -218,6 +249,20 @@ function wireZoom(container) {
     sc.scrollLeft = anchor * next - x;
   };
 
+  // rueda y pellizco disparan muchos eventos por cuadro: se acumulan y se aplican una vez por cuadro
+  let pending = null, zoomRaf = 0;
+  const queueScale = (s, fx) => {
+    pending = { s, fx };
+    gesture();
+    if (zoomRaf) return;
+    zoomRaf = requestAnimationFrame(() => {
+      zoomRaf = 0;
+      const p = pending; pending = null;
+      if (p) setScale(p.s, p.fx);
+    });
+  };
+  const targetScale = () => (pending ? pending.s : view.scale);
+
   const currentCol = () => {
     const cuats = lastCtx.pensum.cuatrimestres;
     const i = cuats.findIndex(c => c.materias.some(m => m.c !== "ELECTIVA" && !lastCtx.effSet.has(m.c)));
@@ -229,7 +274,7 @@ function wireZoom(container) {
     sc.scrollTo({ left: Math.max(0, colLeft(col, sc) - 20), behavior: smooth ? "smooth" : "auto" });
   };
   const fit = () => {
-    const w = track.offsetWidth;
+    const w = nat.w || track.offsetWidth;
     if (!w) return;
     setScale(clamp(sc.clientWidth / w, MIN_SCALE, 1), 0);
     sc.scrollTo({ left: 0, behavior: "auto" });
@@ -240,6 +285,7 @@ function wireZoom(container) {
     if (ready || !sc.clientWidth) return;
     ready = true;
     if (view.scale == null) view.scale = sc.clientWidth < 640 ? 0.85 : 0.9;
+    measure();
     apply();
     if (view.keep) sc.scrollLeft = view.left;
     else { goToProgress(false); view.keep = true; }
@@ -248,7 +294,7 @@ function wireZoom(container) {
   if (view.scale == null) view.scale = window.innerWidth < 640 ? 0.85 : 0.9;
   apply();
   init();
-  if ("ResizeObserver" in window) new ResizeObserver(init).observe(sc); // si la app aún estaba oculta
+  observe(sc, init); // si la app aún estaba oculta
   sc.addEventListener("scroll", () => { if (ready) view.left = sc.scrollLeft; }, { passive: true });
 
   // Botones
@@ -267,7 +313,7 @@ function wireZoom(container) {
   sc.addEventListener("wheel", (e) => {
     if (!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
-    setScale(view.scale * Math.exp(-e.deltaY * 0.0025), e.clientX - sc.getBoundingClientRect().left);
+    queueScale(targetScale() * Math.exp(-e.deltaY * 0.0025), e.clientX - sc.getBoundingClientRect().left);
   }, { passive: false });
 
   // Pellizco con dos dedos
@@ -280,7 +326,7 @@ function wireZoom(container) {
     if (!pinch || e.touches.length !== 2) return;
     e.preventDefault();
     const [a, b] = e.touches;
-    setScale(pinch.s * (dist(a, b) / pinch.d), (a.clientX + b.clientX) / 2 - sc.getBoundingClientRect().left);
+    queueScale(pinch.s * (dist(a, b) / pinch.d), (a.clientX + b.clientX) / 2 - sc.getBoundingClientRect().left);
   }, { passive: false });
   const endPinch = (e) => { if (e.touches.length < 2) pinch = null; };
   sc.addEventListener("touchend", endPinch, { passive: true });
@@ -331,7 +377,7 @@ function wireJump(container) {
   let timer = 0;
   const schedule = () => { if (timer) return; timer = setTimeout(() => { timer = 0; mark(); }, 60); };
   scroller.addEventListener("scroll", schedule, { passive: true });
-  if ("ResizeObserver" in window) new ResizeObserver(schedule).observe(scroller); // al mostrarse la app o cambiar el tamaño
+  observe(scroller, schedule); // al mostrarse la app o cambiar el tamaño
   mark();
 }
 
@@ -363,19 +409,17 @@ function collect(start, map) {
 }
 
 function wire(container, ctx) {
-  const graph = buildGraph(ctx);
-  const track = container.querySelector(".mg-track");
-
-  container.querySelectorAll(".mg-node").forEach(node => {
+  // un solo oyente para todas las materias (en vez de uno por tarjeta)
+  container.querySelector(".mg")?.addEventListener("click", (e) => {
+    const node = e.target.closest(".mg-node");
+    if (!node) return;
     const code = node.dataset.code;
-    node.addEventListener("click", () => {
-      const m = code === "ELECTIVA" ? { c: "ELECTIVA" } : findIn(ctx.pensum, code);
-      if (m) ctx.onCardClick(m); // electivas y modo manual los resuelve quien llama
-      if (code === "ELECTIVA" || ctx.manual) return;
-      // la ruta solo se muestra con clics: clic = ver la ruta, clic otra vez = quitarla
-      selectedCode = selectedCode === code ? null : code;
-      applySelection(container);
-    });
+    const m = code === "ELECTIVA" ? { c: "ELECTIVA" } : findIn(ctx.pensum, code);
+    if (m) ctx.onCardClick(m); // electivas y modo manual los resuelve quien llama
+    if (code === "ELECTIVA" || ctx.manual) return;
+    // la ruta solo se muestra con clics: clic = ver la ruta, clic otra vez = quitarla
+    selectedCode = selectedCode === code ? null : code;
+    applySelection(container);
   });
 
   // clic en el fondo del mapa (sin arrastrar) quita la ruta
@@ -392,7 +436,7 @@ function applySelection(container) {
   const track = container.querySelector(".mg-track");
   if (!track || !lastCtx) return;
   if (selectedCode && !container.querySelector(`.mg-node[data-code="${selectedCode}"]`)) selectedCode = null;
-  if (selectedCode) highlight(container, track, buildGraph(lastCtx), selectedCode);
+  if (selectedCode) highlight(container, track, lastGraph || buildGraph(lastCtx), selectedCode);
   else clearHighlight(container, track);
 }
 
@@ -443,20 +487,25 @@ function drawLines(container, ctx) {
   if (document.body.classList.contains("is-printing")) { svg.innerHTML = ""; return; }
   if (!track.offsetWidth) return; // aún oculto
 
-  const tr = track.getBoundingClientRect();
-  const k = tr.width / track.offsetWidth || 1; // zoom actual: las posiciones se convierten a coordenadas sin zoom
-  svg.setAttribute("width", track.offsetWidth);
-  svg.setAttribute("height", track.offsetHeight);
-  svg.setAttribute("viewBox", `0 0 ${track.offsetWidth} ${track.offsetHeight}`);
+  const W = track.offsetWidth, H = track.offsetHeight;
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
+  // posiciones en coordenadas del mapa sin zoom (offset*, no getBoundingClientRect: no dependen del zoom
+  // y se leen de una pasada sin forzar un diseño por cada materia)
   const pos = new Map();
-  track.querySelectorAll(".mg-node[data-code]").forEach(n => {
-    const r = n.getBoundingClientRect();
-    if (!r.width) return;
-    pos.set(n.dataset.code, { l: (r.left - tr.left) / k, r: (r.right - tr.left) / k, y: (r.top - tr.top + r.height / 2) / k });
+  track.querySelectorAll(".mg-col").forEach(col => {
+    const cx = col.offsetLeft, cy = col.offsetTop;
+    col.querySelectorAll(".mg-node[data-code]").forEach(n => {
+      const w = n.offsetWidth;
+      if (!w) return;
+      const l = cx + n.offsetLeft;
+      pos.set(n.dataset.code, { l, r: l + w, y: cy + n.offsetTop + n.offsetHeight / 2 });
+    });
   });
 
-  const graph = buildGraph(ctx);
+  const graph = ctx === lastCtx && lastGraph ? lastGraph : buildGraph(ctx);
   const paths = [];
   graph.pre.forEach((reqs, to) => {
     const b = pos.get(to);
