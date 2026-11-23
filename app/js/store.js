@@ -49,6 +49,8 @@ export async function loadUser() {
   const r = await call("GET");
   if (r.status === 200 && r.data && r.data.user) return r.data.user;
   if (r.status !== 404) throw new Error("api-" + r.status);
+  // cuenta reiniciada (por la persona o por moderación): se configura de nuevo, sin traer datos viejos de Firestore
+  if (r.data && r.data.code === "reiniciado") return null;
 
   const legacy = await legacyFirestoreUser(auth.currentUser.uid);
   if (!legacy) return null;

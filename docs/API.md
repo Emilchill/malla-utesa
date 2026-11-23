@@ -14,7 +14,8 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 
 | Método y ruta | Quién | Descripción |
 |---|---|---|
-| `GET /api/user` | sesión | Mi perfil: `user` con `name, career, theme, avatar, avatarBg, done[], utesaSync, frame, earned[], verifiedAt, verifiedVia, pct, pid, dirHidden, hideOnline, admin, owner`. `404 sin-perfil` si aún no existe. |
+| `GET /api/user` | sesión | Mi perfil: `user` con `name, career, theme, avatar, avatarBg, done[], utesaSync, frame, earned[], verifiedAt, verifiedVia, pct, pid, dirHidden, hideOnline, admin, owner, chatBan` (`chatBan` = `{ until, reason }` si estoy suspendido del chat; `until: null` = indefinida). `404 sin-perfil` si aún no existe; `404 reiniciado` si la cuenta se reinició y debe configurarse de nuevo (el cliente no reimporta datos viejos). |
+| `POST /api/user/reset` | sesión | `{ confirm: "REINICIAR" }`. **Empezar de cero**: borra nombre, personaje, tema, avance, logros, marco y preferencias; conserva pid, rol, amistades, mensajes y suspensiones. Hasta volver a configurarse (`PUT` con `name` y `career`) el resto de la API responde `409 sin-perfil` y no sale en el directorio. |
 | `PUT /api/user` | sesión | `{ fields: {…}, createdAt? }`. Campos permitidos: `name, career, theme, avatar, avatarBg, frame, done, utesaSync, dirHidden, hideOnline`. Crea el perfil si no existe (necesita `name` y `career`). `403 marco` si el marco no es tuyo; `403 exclusivo` si usas artículos o marcos exclusivos sin ser del equipo. |
 | `GET /api/profile?pid=` | sesión | Perfil público: `profile{ name, career, avatar, avatarBg, frame, earned[], pct, role, verifiedVia, online, seen, since }`, `rel` (relación de amistad), `blocked`, `me`. `404` si ya no existe (se muestra "Usuario eliminado"). |
 
@@ -57,6 +58,14 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 | `GET /api/mods` | equipo | Lista de dueño y moderadores. |
 | `POST /api/mods` | dueño | `{ pid, on }`. Nombrar/quitar moderador (no a sí mismo ni al dueño). Quitar el rol retira marcos y artículos exclusivos. |
 | `POST /api/users/delete` | dueño | `{ pid }`. Elimina por completo (ver arquitectura). No a sí mismo ni al dueño. |
+| `GET /api/mod/summary` | equipo | `summary{ users, online, newWeek, bans, reports, messagesDay }` y `owner`. |
+| `GET /api/mod/accounts?filter=&q=&offset=` | equipo | Todas las cuentas (también las ocultas del directorio), 50 por página. `filter`: `all, banned, reported, staff, new, reset`. Cada una: `pid, name, career, avatar, role, created, seen, online, reset, verified, hidden, pct, msgs, reported, ban`. Sin uid ni correo. |
+| `POST /api/mod/ban` | equipo | `{ pid, minutes, reason? }`. Suspende del chat: `minutes` ∈ 10, 60, 360, 1440, 4320, 10080, 43200; `0` = indefinida (solo el dueño). Mientras dure, `POST`/`PATCH /api/chat` responden `403 suspendido` con `ban`. Vence sola. |
+| `POST /api/mod/unban` | equipo | `{ pid }`. Levanta la suspensión. |
+| `POST /api/mod/reset` | equipo | `{ pid, reason? }`. Reinicia la cuenta de otra persona (igual que «Empezar de cero»). |
+| `GET /api/mod/log` | equipo | Últimas 100 acciones del equipo (`action, actor, target, detail, at`): suspender, levantar, reiniciar, ocultar, restaurar, vaciar, eliminar, hacer-mod, quitar-mod. |
+
+Reglas del panel: nadie actúa sobre sí mismo ni sobre el dueño; sobre otros moderadores solo el dueño. El chat ya no tiene panel de moderación: está en **Configuración → Moderación**.
 
 ## Datos de desarrollo
 

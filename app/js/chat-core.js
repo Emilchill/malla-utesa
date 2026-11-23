@@ -87,14 +87,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     <div class="chat-perm" hidden></div>
     <div class="chat-dmbar"><button type="button" class="chat-back" aria-label="Volver">‹</button><span class="chat-dmwho"></span></div>
     <p class="chat-note"></p>
-    ${me.admin ? `<details class="chat-admin"><summary>Moderación</summary>
-      <h4>Mensajes reportados</h4><ul class="chat-reports"></ul>
-      <h4>Equipo de moderación</h4><ul class="chat-mods"></ul>
-      <h4>Vaciar chats</h4>
-      <div class="chat-wipe"><button type="button" class="btn btn-ghost btn-sm" data-wipe="general">Vaciar General</button><button type="button" class="btn btn-ghost btn-sm" data-wipe="carrera">Vaciar mi carrera</button>${me.owner ? '<button type="button" class="btn btn-ghost btn-sm" data-wipe="all">Vaciar todo</button>' : ""}</div>
-      <p class="chat-hint">Borra los mensajes de forma definitiva. Los chats privados no se tocan.</p>
-      ${me.owner ? '<p class="chat-hint">Para nombrar a alguien moderador, ábrele el perfil (en Estudiantes → Ver estudiantes) y toca «Nombrar moderador». Ahí mismo está «Eliminar usuario» para borrar a alguien por completo.</p>' : ""}
-    </details>` : ""}
+    ${me.admin ? `<button type="button" class="chat-modlink" data-open-mod>🛡️ La moderación ahora está en <b>Configuración → Moderación</b></button>` : ""}
     <div class="chat-home"></div>
     <div class="chat-people"><div class="pp-tabs" role="tablist" aria-label="Personas"></div><div class="pp-body"></div></div>
     <div class="chat-new"></div>
@@ -110,6 +103,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
       <div class="emo-tabs" role="tablist" aria-label="Categorías de emojis"></div>
       <div class="emo-grid" role="listbox" aria-label="Emojis"></div>
     </div>
+    <div class="chat-ban" role="status" hidden></div>
     <form class="chat-compose">
       <button type="button" class="chat-emoji-btn" aria-label="Elegir emoji" aria-expanded="false" title="Emojis">😊</button>
       <textarea rows="1" maxlength="500" placeholder="Escribe un mensaje…" aria-label="Mensaje" enterkeyhint="send" autocomplete="off"></textarea>
@@ -140,6 +134,21 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
   const toast = (t) => { const el = $(".chat-toast"); if (!el) return; el.textContent = t; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2400); }; // confirma cada acción (visibilidad del estado del sistema)
   const nearBottom = (px = 90) => list.scrollHeight - list.scrollTop - list.clientHeight < px;
   const toBottom = () => { list.scrollTop = list.scrollHeight; jump.classList.add("hidden"); down.classList.add("hidden"); };
+
+  /** Suspensión del chat: aviso fijo y el cuadro de escribir bloqueado hasta que venza. */
+  let banTimer = null;
+  function paintBan(b) {
+    const el = $(".chat-ban"), send = $(".chat-send");
+    clearTimeout(banTimer);
+    const on = !!b && (b.until == null || b.until > serverNow());
+    el.hidden = !on;
+    ta.disabled = on; send.disabled = on; emoBtn.disabled = on;
+    ta.placeholder = on ? "No puedes escribir mientras dure la suspensión" : "Escribe un mensaje…";
+    if (!on) return;
+    const when = b.until == null ? "por tiempo indefinido" : `hasta el ${new Date(b.until).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" })}`;
+    el.innerHTML = `<span aria-hidden="true">⛔</span><span><b>Estás suspendido del chat ${esc(when.replace(/\.$/, ""))}.</b>${b.reason ? ` Motivo: ${esc(b.reason)}.` : ""} Puedes seguir leyendo. Si crees que es un error, escríbele al equipo de moderación.</span>`;
+    if (b.until != null && b.until - serverNow() < 86400000) banTimer = setTimeout(() => paintBan(null), b.until - serverNow() + 1000); // se desbloquea solo al vencer
+  }
 
   /** Aviso amable cuando el servidor enmascaró palabras. */
   function showWarn(text) {
@@ -264,6 +273,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
       }
       if (r.status !== 200 || !r.data?.ok) { if (!st.loaded) setErr("No se pudieron cargar los mensajes."); return; }
       const d = r.data;
+      if (d.ban !== undefined) paintBan(d.ban); // solo viene en la primera carga de cada sala
       // se borró todo el chat (marca de reinicio distinta): se limpia la sala y se carga de cero
       if (st.epoch !== undefined && d.epoch !== undefined && d.epoch !== st.epoch) {
         st.epoch = d.epoch; st.msgs.clear(); st.last = 0; st.since = 0; st.loaded = false; st.unread = 0; st.more = false;
@@ -658,19 +668,11 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     dmwho.innerHTML = `${whoEl}${mute}${info}`;
   }
 
-  async function loadMods() {
-    if (!me.admin) return;
-    const r = await api("GET", "/api/mods").catch(() => null);
-    const ul = root.querySelector(".chat-mods");
-    if (!r || r.status !== 200 || !ul) return;
-    ul.innerHTML = r.data.mods.map(m => `<li><span><strong>${esc(m.name)}</strong> · ${m.role === "owner" ? "👑 Dueño" : "🛡️ Moderador"} <small class="muted">${esc(PENSUMS[m.career]?.key || "")}</small></span>${me.owner && m.role === "mod" ? `<button type="button" class="btn btn-ghost btn-sm" data-unmod="${esc(m.pid)}">Quitar</button>` : ""}</li>`).join("");
-  }
   async function setMod(pid, on) {
     if (pid === me.pid) return;
     const r = await api("POST", "/api/mods", { pid, on }).catch(() => null);
     if (!r || r.status !== 200) setErr(r?.data?.message || "No se pudo cambiar el rol.");
     else { setErr(""); toast("Rol actualizado ✓"); }
-    loadMods();
   }
 
   /* ---------- salas ---------- */
@@ -738,9 +740,10 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
         }
         if (st0) pingRoom(st0); // los demás se enteran ya, sin esperar a que yo termine de actualizarme
         fetchRoom(roomName);
-      } else setErr(r.data?.message || "No se pudo enviar. Intenta de nuevo.");
+      } else if (r.status === 403 && r.data?.code === "suspendido") { paintBan(r.data.ban); setErr(""); }
+      else setErr(r.data?.message || "No se pudo enviar. Intenta de nuevo.");
     } catch { setErr("Sin conexión. No se envió el mensaje."); }
-    finally { btn.disabled = false; ta.focus(); }
+    finally { btn.disabled = ta.disabled; if (!ta.disabled) ta.focus(); }
   }
 
   async function removeMsg(id) {
@@ -748,7 +751,6 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     if (r && r.status === 200) {
       await fetchRoom(active); // el servidor lo devuelve como "borrado" u "ocultado por un moderador"
       pingRoom(ROOMS[active]);
-      if (me.admin) loadReports();
     } else setErr("No se pudo borrar el mensaje.");
   }
 
@@ -784,15 +786,6 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
   async function restoreMsg(id) {
     const r = await api("POST", "/api/chat/restore", { id }).catch(() => null);
     if (r && r.status === 200) { await fetchRoom(active); pingRoom(ROOMS[active]); } else setErr("No se pudo restaurar el mensaje.");
-  }
-
-  async function loadReports() {
-    if (!me.admin) return;
-    const r = await api("GET", "/api/chat/reports").catch(() => null);
-    if (!r || r.status !== 200) return;
-    $(".chat-reports").innerHTML = r.data.reports.length
-      ? r.data.reports.map(x => `<li><span><strong>${esc(x.name)}</strong> (${x.n} reporte${x.n === 1 ? "" : "s"}${x.reason ? ` · ${esc(x.reason)}` : ""}): ${esc(x.text)}${x.selfDeleted ? ' <em class="rep-flag">borrado por su autor después del reporte</em>' : x.edited ? ' <em class="rep-flag">editado después del reporte</em>' : ""}</span><button type="button" class="btn btn-ghost btn-sm" data-hide="${x.id}">${x.selfDeleted ? "Archivar" : "Ocultar"}</button></li>`).join("")
-      : "<li>Sin reportes pendientes.</li>";
   }
 
   async function showProfile(pid) {
@@ -944,29 +937,7 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     } else { b.disabled = false; setErr("No se pudo cambiar el bloqueo."); }
   };
   document.addEventListener("click", onDocClick);
-  if (me.admin) {
-    root.querySelector(".chat-admin").addEventListener("toggle", () => { loadReports(); loadMods(); });
-    root.querySelector(".chat-wipe").addEventListener("click", async (e) => {
-      const b = e.target.closest("[data-wipe]");
-      if (!b) return;
-      const what = b.dataset.wipe;
-      if (!confirm(what === "all" ? "¿Vaciar TODOS los chats públicos? No se puede deshacer." : `¿Vaciar ${what === "general" ? "el chat General" : "el chat de tu carrera"}? No se puede deshacer.`)) return;
-      b.disabled = true;
-      const r = await api("POST", "/api/chat/wipe", { room: what }).catch(() => null);
-      b.disabled = false;
-      if (r && r.status === 200) { ping(ROOMS.general.ping); ping(ROOMS.carrera.ping); refreshAll(); loadReports(); setErr(""); } else setErr(r?.data?.message || "No se pudo vaciar.");
-    });
-    root.querySelector(".chat-mods").addEventListener("click", async (e) => {
-      const u = e.target.closest("[data-unmod]");
-      if (u) { u.disabled = true; await setMod(u.dataset.unmod, false); }
-    });
-    root.querySelector(".chat-reports").addEventListener("click", async (e) => {
-      const h = e.target.closest("[data-hide]");
-      if (!h) return;
-      const r = await api("DELETE", `/api/chat?id=${h.dataset.hide}`).catch(() => null);
-      if (r && r.status === 200) { loadReports(); refreshAll(); ping(ROOMS.general.ping); ping(ROOMS.carrera.ping); }
-    });
-  }
+  root.querySelector("[data-open-mod]")?.addEventListener("click", () => window.dispatchEvent(new CustomEvent("open-moderation")));
   const onVis = () => { if (!document.hidden) { refreshAll(); if (isVisible()) show(); } };
   document.addEventListener("visibilitychange", onVis);
 

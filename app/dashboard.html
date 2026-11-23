@@ -366,6 +366,14 @@
         <button class="icon-btn" data-modal-close title="Cerrar" aria-label="Cerrar configuración"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
+      <!-- pestañas: «Moderación» solo la ve el equipo (el servidor vuelve a comprobarlo) -->
+      <div class="set-tabs" id="set-tabs" role="tablist" aria-label="Secciones de configuración" hidden>
+        <button type="button" role="tab" data-set-tab="cuenta" aria-selected="true">Mi cuenta</button>
+        <button type="button" role="tab" data-set-tab="mod" aria-selected="false">🛡️ Moderación</button>
+      </div>
+      <div class="set-pane" id="set-pane-mod" hidden></div>
+      <div class="set-pane" id="set-pane-cuenta">
+
       <section class="set-card set-profile">
         <div class="set-avatar" id="set-avatar" aria-hidden="true"></div>
         <div class="set-profile-info">
@@ -450,7 +458,18 @@
         <button type="button" class="btn btn-ghost btn-sm set-reset" id="set-reset-progress">Reiniciar mi progreso</button>
       </section>
 
+      <section class="set-card set-danger" id="set-restart">
+        <h4 class="set-title">Empezar de cero</h4>
+        <p class="set-text">Reinicia tu cuenta como si fuera nueva: vuelves a poner tu nombre, tu personaje, tu carrera y tu tema, y se borran tu avance, tus logros y marcos y tus preferencias. Se conservan tu correo, tus amistades y tus mensajes. No se puede deshacer.</p>
+        <div class="set-row">
+          <input class="input" type="text" id="set-restart-in" placeholder="Escribe REINICIAR" autocomplete="off" maxlength="12" aria-label="Escribe REINICIAR para confirmar">
+          <button type="button" class="btn btn-ghost mod-danger" id="set-restart-go" disabled>Reiniciar mi cuenta</button>
+        </div>
+        <div class="err-box" id="set-restart-msg"></div>
+      </section>
+
       <button type="button" class="btn btn-ghost set-logout" id="set-logout">Cerrar sesión</button>
+      </div><!-- /set-pane-cuenta -->
     </div>
   </div>
 

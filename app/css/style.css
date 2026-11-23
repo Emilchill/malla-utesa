@@ -2336,3 +2336,60 @@ body.ps-preview .print-sheet { display: block; margin: 12px auto; box-shadow: 0 
   body.has-sheet #app { display: block !important; padding: 0 !important; margin: 0 !important; }
   body.has-sheet .print-sheet { display: block !important; box-shadow: none !important; margin: 0 !important; break-inside: avoid; page-break-inside: avoid; }
 }
+
+/* ============================================================
+   Actualización de moderación: pestañas de Configuración, panel del equipo y suspensiones del chat
+   ============================================================ */
+.set-tabs { display: flex; gap: 4px; padding: 4px; margin: 0 0 14px; background: var(--bg-soft); border-radius: 12px; }
+.set-tabs [role="tab"] { flex: 1; border: none; background: transparent; padding: 9px 10px; border-radius: 9px; font: 600 13px Inter, sans-serif; color: var(--muted); }
+.set-tabs [role="tab"][aria-selected="true"] { background: var(--card); color: var(--primary); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
+.mod-danger { color: var(--danger) !important; border-color: color-mix(in srgb, var(--danger) 45%, var(--border)) !important; }
+#set-restart .set-row { display: flex; gap: 8px; flex-wrap: wrap; }
+#set-restart .input { flex: 1 1 180px; text-transform: uppercase; }
+
+.mod-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.mod-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); text-align: left; color: var(--text); font: inherit; }
+.mod-stat[data-jump] { cursor: pointer; }
+.mod-stat[data-jump]:hover { border-color: var(--primary); }
+.mod-stat b { font: 700 20px 'Space Grotesk', sans-serif; color: var(--primary); line-height: 1.1; }
+.mod-stat span { font-size: 11.5px; color: var(--muted); }
+.mod-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 10px; }
+.mod-tabs [role="tab"] { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--border); background: var(--card); color: var(--muted); border-radius: 999px; padding: 7px 12px; font: 600 12.5px Inter, sans-serif; }
+.mod-tabs [role="tab"][aria-selected="true"] { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+.mod-count { font-style: normal; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; display: inline-grid; place-items: center; }
+.mod-bar { margin-bottom: 8px; }
+.mod-bar .input { width: 100%; }
+.mod-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.mod-filters .chip { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 5px 10px; font-size: 12px; color: var(--muted); }
+.mod-filters .chip.chip-active { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+.mod-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mod-empty { padding: 18px; text-align: center; color: var(--muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 12px; }
+.mod-acc, .mod-rep { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.mod-acc-top { display: flex; gap: 10px; align-items: center; }
+.mod-acc-top > :first-child { flex: none; }
+.mod-acc-txt { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 14px; }
+.mod-meta { flex-basis: 100%; font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+.mod-on { color: var(--success); font-weight: 600; }
+.mod-warn { color: var(--danger); font-weight: 600; }
+.mod-ban { margin: 8px 0 0; padding: 6px 9px; border-radius: 8px; font-size: 12.5px; background: color-mix(in srgb, var(--danger) 10%, var(--card)); color: var(--danger); }
+.mod-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mod-actions:empty { display: none; }
+.mod-banform { margin-top: 10px; padding: 10px; border-radius: 10px; background: var(--bg-soft); display: flex; flex-direction: column; gap: 8px; }
+.mod-banform label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.mod-banform .set-row { display: flex; gap: 8px; justify-content: flex-end; }
+.mod-rep p { margin: 0 0 6px; font-size: 13.5px; }
+.mod-rep blockquote { margin: 0 0 4px; padding: 7px 10px; border-left: 3px solid var(--border); background: var(--bg-soft); border-radius: 0 8px 8px 0; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+.mod-logrow { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.4; }
+.mod-logicon { flex: none; width: 22px; text-align: center; }
+.mod-when { display: block; color: var(--muted); font-size: 11px; }
+.mod-help { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.mod-wipe { display: flex; flex-wrap: wrap; gap: 8px; }
+.mod-more { margin: 10px auto 0; display: block; }
+@media (max-width: 520px) { .mod-summary { grid-template-columns: repeat(2, 1fr); } }
+
+/* chat: acceso al panel nuevo y aviso de suspensión */
+.chat-modlink { display: block; width: calc(100% - 24px); margin: 6px 12px; padding: 7px 10px; border: 1px dashed var(--border); border-radius: 10px; background: var(--bg-soft); color: var(--muted); font: 500 12px Inter, sans-serif; text-align: left; cursor: pointer; }
+.chat-modlink:hover { border-color: var(--primary); color: var(--primary); }
+.chat-ban { display: flex; gap: 8px; align-items: flex-start; margin: 6px 10px 0; padding: 9px 11px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; background: color-mix(in srgb, var(--danger) 11%, var(--card)); color: var(--text); border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); }
+.chat-ban[hidden] { display: none; }
+.chat-compose textarea:disabled { opacity: .55; cursor: not-allowed; }

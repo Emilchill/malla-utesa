@@ -45,7 +45,7 @@ function reply(status, body) {
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
   });
 }
-const fail = (status, code, message) => reply(status, { ok: false, code, message });
+const fail = (status, code, message, extra) => reply(status, { ok: false, code, message, ...(extra || {}) });
 
 /* ---------- Cookies de sesión del portal ---------- */
 function splitSetCookie(header) {
@@ -366,7 +366,7 @@ async function ensureSchema(db) {
   // columnas añadidas después (si ya existen, SQLite avisa y se ignora)
   for (const col of ["pid TEXT", "frame TEXT", "earned TEXT NOT NULL DEFAULT '[]'", "verified_at INTEGER", "verified_pending TEXT",
     "is_mod INTEGER NOT NULL DEFAULT 0", "is_owner INTEGER NOT NULL DEFAULT 0", "dir_hidden INTEGER NOT NULL DEFAULT 0",
-    "last_seen INTEGER", "hide_online INTEGER NOT NULL DEFAULT 0", "verified_src TEXT"]) {
+    "last_seen INTEGER", "hide_online INTEGER NOT NULL DEFAULT 0", "verified_src TEXT", "needs_setup INTEGER NOT NULL DEFAULT 0"]) {
     try { await db.prepare(`ALTER TABLE users ADD COLUMN ${col}`).run(); } catch { /* ya existe */ }
   }
   try { await db.prepare("ALTER TABLE messages ADD COLUMN hidden_at INTEGER").run(); } catch { /* ya existe o la tabla aún no existe */ }
@@ -390,6 +390,11 @@ async function ensureSchema(db) {
     db.prepare("CREATE TABLE IF NOT EXISTS group_members (gid INTEGER NOT NULL, uid TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'member', joined_at INTEGER NOT NULL, PRIMARY KEY (gid, uid))"),
     db.prepare("CREATE INDEX IF NOT EXISTS group_members_uid ON group_members(uid)"),
     db.prepare("CREATE TABLE IF NOT EXISTS banned (uid TEXT PRIMARY KEY, at INTEGER NOT NULL)"),
+    // suspensiones del chat por tiempo (no borran la cuenta: solo impiden escribir hasta `until`)
+    db.prepare("CREATE TABLE IF NOT EXISTS chat_bans (uid TEXT PRIMARY KEY, until INTEGER NOT NULL, reason TEXT, by_uid TEXT, at INTEGER NOT NULL)"),
+    // registro de lo que hace el equipo de moderación (quién, qué, a quién y cuándo)
+    db.prepare("CREATE TABLE IF NOT EXISTS mod_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, actor_uid TEXT NOT NULL, action TEXT NOT NULL, target_pid TEXT, target_name TEXT, detail TEXT)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS mod_log_at ON mod_log(at)"),
   ]);
   for (const col of ["hidden_at INTEGER", "hidden_by TEXT", "edited_at INTEGER"]) {
     try { await db.prepare(`ALTER TABLE messages ADD COLUMN ${col}`).run(); } catch { /* ya existe */ }
@@ -526,8 +531,21 @@ async function userApi(request, env) {
   if (isResp(a)) return a;
   const { uid, row, admin, owner } = a;
 
+  // reiniciar mi cuenta desde cero (la propia persona, desde Configuración)
+  if (new URL(request.url).pathname === "/api/user/reset") {
+    if (request.method !== "POST") return fail(405, "metodo", "Método no permitido.");
+    if (!sameOrigin(request)) return fail(403, "origen", "Petición no permitida.");
+    let body;
+    try { body = JSON.parse(await request.text()); } catch { return fail(400, "entrada", "Datos no válidos."); }
+    if (!body || body.confirm !== "REINICIAR") return fail(400, "confirmar", "Escribe REINICIAR para confirmar.");
+    if (!row || row.needs_setup) return fail(409, "sin-perfil", "Tu cuenta ya está lista para configurarse de nuevo.");
+    await resetProfile(env, uid);
+    return reply(200, { ok: true });
+  }
+
   if (request.method === "GET") {
-    return row ? reply(200, { ok: true, user: { ...userOut(row), admin, owner } }) : fail(404, "sin-perfil", "Aún no hay perfil.");
+    if (row && row.needs_setup) return fail(404, "reiniciado", "Tu cuenta se reinició: configura tu perfil de nuevo.");
+    return row ? reply(200, { ok: true, user: { ...userOut(row), admin, owner, chatBan: await activeBan(env, uid) } }) : fail(404, "sin-perfil", "Aún no hay perfil.");
   }
 
   if (request.method === "PUT") {
@@ -551,6 +569,11 @@ async function userApi(request, env) {
         "INSERT INTO users (uid,pid,name,career,theme,avatar,avatar_bg,done,utesa_sync,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
       ).bind(uid, await pidOf(uid), f.name, f.career, f.theme ?? null, f.avatar ?? null, f.avatar_bg ?? null, f.done ?? "[]", f.utesa_sync ?? null, created, now).run();
     } else {
+      if (row.needs_setup) {
+        // cuenta reiniciada: se vuelve a configurar como la primera vez (nombre y carrera obligatorios)
+        if (!f.name || !f.career) return fail(409, "sin-perfil", "Primero configura tu perfil de nuevo.");
+        f.needs_setup = 0;
+      }
       if (f.frame && f.frame.startsWith("MOD-")) {
         if (!admin) return fail(403, "marco", "Ese marco es exclusivo del equipo de moderación.");
       } else if (f.frame) {
@@ -610,10 +633,35 @@ async function authed(request, env, needProfile = true) {
     row.last_seen = Date.now();
     await env.DB.prepare("UPDATE users SET last_seen = ? WHERE uid = ?").bind(row.last_seen, uid).run();
   }
+  // cuenta reiniciada: hasta que vuelva a configurar su perfil no usa el chat ni la red social
+  if (row && row.needs_setup && needProfile) return fail(409, "sin-perfil", "Primero configura tu perfil de nuevo.");
   const admin = owner || !!(row && row.is_mod);
   return { uid, row, admin, owner };
 }
 const isResp = (x) => x instanceof Response;
+
+/* ---------- Moderación: suspensiones, reinicios y registro ---------- */
+const FOREVER = 8.64e15; // "suspensión indefinida" (solo el dueño)
+/** Suspensión vigente del chat, o null. */
+async function activeBan(env, uid) {
+  const b = await env.DB.prepare("SELECT until, reason, at FROM chat_bans WHERE uid = ? AND until > ?").bind(uid, Date.now()).first();
+  return b ? { until: b.until >= FOREVER ? null : b.until, reason: b.reason || null, at: b.at } : null;
+}
+const banFail = (b) => fail(403, "suspendido",
+  `Estás suspendido del chat ${(b.until ? `hasta el ${new Date(b.until).toLocaleString("es-DO", { timeZone: "America/Santo_Domingo", dateStyle: "medium", timeStyle: "short" })}` : "por tiempo indefinido").replace(/\.$/, "")}.${b.reason ? ` Motivo: ${b.reason}` : ""}`, { ban: b });
+/** Anota una acción del equipo. No debe tumbar la acción si falla. */
+async function logMod(env, actorUid, action, target, detail) {
+  try {
+    await env.DB.prepare("INSERT INTO mod_log (at, actor_uid, action, target_pid, target_name, detail) VALUES (?,?,?,?,?,?)")
+      .bind(Date.now(), actorUid, action, target ? target.pid || null : null, target ? target.name || null : null, detail ? String(detail).slice(0, 200) : null).run();
+  } catch { /* el registro es informativo */ }
+}
+/** Deja el perfil como recién creado (nombre, apariencia, avance, logros y preferencias). Conserva rol, amistades y mensajes. */
+async function resetProfile(env, uid) {
+  return env.DB.prepare(`UPDATE users SET name = 'Estudiante', theme = NULL, avatar = NULL, avatar_bg = NULL, frame = NULL, done = '[]', utesa_sync = NULL,
+      earned = '[]', verified_at = NULL, verified_pending = NULL, verified_src = NULL, hide_online = 0, dir_hidden = 0, needs_setup = 1, updated_at = ? WHERE uid = ?`)
+    .bind(Date.now(), uid).run();
+}
 
 function sameOrigin(request) {
   const origin = request.headers.get("origin") || "";
@@ -705,13 +753,15 @@ async function chatApi(request, env, sub) {
           AND (u.pid IS NULL OR u.pid NOT IN (SELECT blocked_pid FROM blocks WHERE uid = ?))
         ORDER BY m.id DESC LIMIT 60`
     ).bind(room, after, uid).all();
-    return reply(200, { ok: true, me: row.pid, admin, now, epoch, seen: wantOn ? await onlineIn(env, room) : undefined, more: after === 0 && results.length === 60, removed, hiddenNow, edited, messages: results.reverse().map(r => msgOut(r, admin)) });
+    return reply(200, { ok: true, me: row.pid, admin, now, epoch, ban: after === 0 ? await activeBan(env, uid) : undefined, seen: wantOn ? await onlineIn(env, room) : undefined, more: after === 0 && results.length === 60, removed, hiddenNow, edited, messages: results.reverse().map(r => msgOut(r, admin)) });
   }
 
   if (sub === "" && request.method === "POST") {
     if (!sameOrigin(request)) return fail(403, "origen", "Petición no permitida.");
     let body;
     try { body = JSON.parse(await request.text()); } catch { return fail(400, "entrada", "Datos no válidos."); }
+    const ban = await activeBan(env, uid);
+    if (ban) return banFail(ban);
     const room = await resolveRoom(env, uid, row, body && body.room);
     if (!room) return (await goneRoom(env, body && body.room)) ? fail(410, "eliminado", "Usuario eliminado") : fail(400, "sala", "Sala no válida. En los chats privados hace falta ser amigos.");
     const clean = cleanText(body && body.text);
@@ -735,7 +785,7 @@ async function chatApi(request, env, sub) {
     if (!sameOrigin(request)) return fail(403, "origen", "Petición no permitida.");
     const id = parseInt(url.searchParams.get("id") || "", 10);
     if (!id) return fail(400, "entrada", "Mensaje no válido.");
-    const m = await env.DB.prepare("SELECT uid, room FROM messages WHERE id = ?").bind(id).first();
+    const m = await env.DB.prepare("SELECT m.uid, m.room, m.text, u.pid, u.name FROM messages m LEFT JOIN users u ON u.uid = m.uid WHERE m.id = ?").bind(id).first();
     if (!m) return fail(404, "mensaje", "No existe ese mensaje.");
     let mayMod = admin;
     if (m.uid !== uid && (m.room.startsWith("dm:") || m.room.startsWith("g:"))) {
@@ -748,6 +798,7 @@ async function chatApi(request, env, sub) {
     }
     if (m.uid !== uid && !mayMod) return fail(403, "permiso", "Solo puedes borrar tus mensajes.");
     await env.DB.prepare("UPDATE messages SET hidden = 1, hidden_by = ?, hidden_at = ? WHERE id = ?").bind(m.uid === uid ? "self" : "mod", Date.now(), id).run();
+    if (m.uid !== uid && admin) await logMod(env, uid, "ocultar", m, `#${id}: ${m.text}`);
     return reply(200, { ok: true });
   }
 
@@ -761,6 +812,8 @@ async function chatApi(request, env, sub) {
     const m = await env.DB.prepare("SELECT uid, hidden, created_at FROM messages WHERE id = ?").bind(id).first();
     if (!m) return fail(404, "mensaje", "No existe ese mensaje.");
     if (m.uid !== uid) return fail(403, "permiso", "Solo puedes editar tus mensajes.");
+    const ban = await activeBan(env, uid);
+    if (ban) return banFail(ban);
     if (m.hidden) return fail(409, "oculto", "Ese mensaje ya fue borrado u ocultado.");
     if (Date.now() - m.created_at > EDIT_WINDOW) return fail(403, "tiempo", "Ya pasaron los 5 minutos para editar este mensaje.");
     const clean = cleanText(body && body.text);
@@ -816,6 +869,7 @@ async function chatApi(request, env, sub) {
     if (!m.hidden || m.hidden_by !== "mod") return fail(409, "estado", "Solo se restauran mensajes ocultados por un moderador.");
     // se restaura como "editado" para que todos los chats abiertos lo vuelvan a mostrar
     await env.DB.prepare("UPDATE messages SET hidden = 0, hidden_by = NULL, hidden_at = NULL, edited_at = ? WHERE id = ?").bind(Date.now(), id).run();
+    await logMod(env, uid, "restaurar", null, `mensaje #${id}`);
     return reply(200, { ok: true });
   }
 
@@ -834,6 +888,7 @@ async function chatApi(request, env, sub) {
     await env.DB.prepare(`DELETE FROM reports WHERE message_id IN (SELECT id FROM messages WHERE ${cond})`).bind(...bind).run();
     await env.DB.prepare(`DELETE FROM messages WHERE ${cond}`).bind(...bind).run();
     await env.DB.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('chat_epoch', ?)").bind(String(Date.now())).run(); // los chats abiertos se reinician solos
+    await logMod(env, uid, "vaciar", null, what === "all" ? "todas las salas públicas" : what === "general" ? "General" : `sala de ${row.career}`);
     return reply(200, { ok: true });
   }
 
@@ -885,6 +940,7 @@ async function socialApi(request, env, sub) {
           AND (? = 'all' OR u.career = ?)
           AND u.name LIKE ?
           AND (COALESCE(u.dir_hidden,0) = 0 OR f.status IS NOT NULL OR ? = 1)
+          AND COALESCE(u.needs_setup,0) = 0
           AND u.pid NOT IN (SELECT blocked_pid FROM blocks WHERE uid = ?)
           AND u.uid NOT IN (SELECT uid FROM blocks WHERE blocked_pid = ?)
         ORDER BY CASE WHEN ? = 'all' THEN u.career ELSE '' END, COALESCE(u.is_owner,0) DESC, COALESCE(u.is_mod,0) DESC, u.name COLLATE NOCASE
@@ -1123,7 +1179,7 @@ async function socialApi(request, env, sub) {
     const body = await readBody();
     const pid = String(body && body.pid || "");
     if (!PID.test(pid)) return fail(400, "entrada", "Usuario no válido.");
-    const t = await env.DB.prepare("SELECT uid, is_owner FROM users WHERE pid = ?").bind(pid).first();
+    const t = await env.DB.prepare("SELECT uid, is_owner, name FROM users WHERE pid = ?").bind(pid).first();
     if (!t) return fail(404, "perfil", "No existe ese perfil.");
     if (t.uid === uid) return fail(400, "entrada", "No puedes eliminarte a ti mismo.");
     if (t.is_owner) return fail(409, "dueno", "No se puede eliminar al dueño.");
@@ -1147,7 +1203,9 @@ async function socialApi(request, env, sub) {
       env.DB.prepare("DELETE FROM users WHERE uid = ?").bind(t.uid),
       env.DB.prepare("INSERT OR IGNORE INTO banned (uid, at) VALUES (?, ?)").bind(t.uid, Date.now()),
       env.DB.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('chat_epoch', ?)").bind(String(Date.now())), // los chats abiertos se recargan y ya no muestran sus mensajes
+      env.DB.prepare("DELETE FROM chat_bans WHERE uid = ?").bind(t.uid),
     ]);
+    await logMod(env, uid, "eliminar", { pid, name: t.name }, "cuenta eliminada");
     return reply(200, { ok: true });
   }
 
@@ -1167,6 +1225,8 @@ async function socialApi(request, env, sub) {
     if (!t) return fail(404, "perfil", "No existe ese perfil.");
     if (t.uid === uid) return fail(400, "entrada", "No puedes cambiarte el rol a ti mismo.");
     if (t.is_owner) return fail(409, "dueno", "El dueño siempre es moderador.");
+    const tn = await env.DB.prepare("SELECT name FROM users WHERE uid = ?").bind(t.uid).first();
+    await logMod(env, uid, body.on === true ? "hacer-mod" : "quitar-mod", { pid, name: tn && tn.name }, null);
     if (body.on === true) await env.DB.prepare("UPDATE users SET is_mod = 1 WHERE uid = ?").bind(t.uid).run();
     else { // sin rol pierde, en UNA sola sentencia, el rol, los marcos MOD y los artículos exclusivos
       const av = await env.DB.prepare("SELECT avatar FROM users WHERE uid = ?").bind(t.uid).first();
@@ -1233,11 +1293,115 @@ async function verifyApi(request, env) {
   return reply(200, { ok: true, verified: { earned: r.earned, mismatch: false, frame, pct: progressPct({ verified_at: 1, verified_pending: JSON.stringify(pend), career: row.career }), via: "bookmark" } });
 }
 
+/* ============================================================
+   Panel de moderación (Configuración → Moderación): cuentas, suspensiones, reinicios y registro.
+   Moderadores: actúan sobre estudiantes. Dueño: además sobre moderadores y suspensiones indefinidas.
+   Nunca se expone el uid ni el correo de nadie: todo va por pid.
+   ============================================================ */
+const BAN_MINUTES = [10, 60, 360, 1440, 4320, 10080, 43200]; // 10 min · 1 h · 6 h · 1 día · 3 días · 1 semana · 30 días
+const ACCOUNT_COLS = `u.pid, u.name, u.career, u.avatar, u.avatar_bg, u.frame, u.is_mod, u.is_owner, u.created_at, u.last_seen, u.hide_online,
+  u.needs_setup, u.verified_at, u.verified_pending, u.dir_hidden, b.until AS ban_until, b.reason AS ban_reason,
+  (SELECT COUNT(*) FROM messages m WHERE m.uid = u.uid) AS msgs,
+  (SELECT COUNT(DISTINCT r.message_id) FROM reports r JOIN messages m2 ON m2.id = r.message_id WHERE m2.uid = u.uid) AS reported`;
+const accountOut = (r, now) => ({
+  pid: r.pid, name: r.name, career: r.career, avatar: r.avatar || null, avatarBg: r.avatar_bg || null, frame: r.frame || null,
+  role: roleOf(r), created: r.created_at, seen: r.hide_online ? null : (r.last_seen || null),
+  online: !r.hide_online && !!r.last_seen && now - r.last_seen < ONLINE_MS,
+  reset: !!r.needs_setup, verified: !!r.verified_at, hidden: !!r.dir_hidden, pct: progressPct(r),
+  msgs: r.msgs || 0, reported: r.reported || 0,
+  ban: r.ban_until && r.ban_until > now ? { until: r.ban_until >= FOREVER ? null : r.ban_until, reason: r.ban_reason || null } : null,
+});
+
+async function modApi(request, env, sub) {
+  const a = await authed(request, env);
+  if (isResp(a)) return a;
+  const { uid, admin, owner } = a;
+  if (!admin) return fail(403, "permiso", "Solo el equipo de moderación.");
+  const url = new URL(request.url);
+  const now = Date.now();
+  const readBody = async () => { try { return JSON.parse(await request.text()); } catch { return null; } };
+
+  if (sub === "/summary" && request.method === "GET") {
+    const q = (sql, ...b) => env.DB.prepare(sql).bind(...b).first();
+    const [users, online, fresh, bans, reports, today] = await Promise.all([
+      q("SELECT COUNT(*) AS n FROM users WHERE pid IS NOT NULL"),
+      q("SELECT COUNT(*) AS n FROM users WHERE last_seen > ? AND COALESCE(hide_online,0) = 0", now - ONLINE_MS),
+      q("SELECT COUNT(*) AS n FROM users WHERE created_at > ?", now - 7 * 86400000),
+      q("SELECT COUNT(*) AS n FROM chat_bans WHERE until > ?", now),
+      q("SELECT COUNT(DISTINCT r.message_id) AS n FROM reports r JOIN messages m ON m.id = r.message_id WHERE m.hidden = 0 OR m.hidden_by = 'self'"),
+      q("SELECT COUNT(*) AS n FROM messages WHERE created_at > ?", now - 86400000),
+    ]);
+    return reply(200, { ok: true, now, owner, summary: { users: users.n, online: online.n, newWeek: fresh.n, bans: bans.n, reports: reports.n, messagesDay: today.n } });
+  }
+
+  if (sub === "/accounts" && request.method === "GET") {
+    const qtext = cleanText(url.searchParams.get("q") || "").slice(0, 40).replace(/[\\%_]/g, "");
+    const filter = url.searchParams.get("filter") || "all";
+    const offset = Math.min(5000, Math.max(0, parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+    const where = {
+      all: "1 = 1", banned: "b.until > ?1", staff: "(u.is_mod = 1 OR u.is_owner = 1)", reset: "u.needs_setup = 1",
+      reported: "EXISTS (SELECT 1 FROM reports r JOIN messages m3 ON m3.id = r.message_id WHERE m3.uid = u.uid)", new: "u.created_at > ?1 - 604800000",
+    }[filter];
+    if (!where) return fail(400, "entrada", "Filtro no válido.");
+    const { results } = await env.DB.prepare(
+      `SELECT ${ACCOUNT_COLS} FROM users u LEFT JOIN chat_bans b ON b.uid = u.uid
+        WHERE u.pid IS NOT NULL AND u.name LIKE ?2 AND ${where}
+        ORDER BY COALESCE(u.is_owner,0) DESC, COALESCE(u.last_seen, u.created_at) DESC LIMIT 51 OFFSET ?3`
+    ).bind(now, `%${qtext}%`, offset).all();
+    return reply(200, { ok: true, now, owner, more: results.length > 50, accounts: results.slice(0, 50).map(r => accountOut(r, now)) });
+  }
+
+  if (sub === "/log" && request.method === "GET") {
+    const { results } = await env.DB.prepare(
+      `SELECT l.id, l.at, l.action, l.target_pid, l.target_name, l.detail, u.name AS actor, u.pid AS actor_pid
+         FROM mod_log l LEFT JOIN users u ON u.uid = l.actor_uid ORDER BY l.id DESC LIMIT 100`
+    ).all();
+    return reply(200, { ok: true, log: results.map(x => ({ id: x.id, at: x.at, action: x.action, actor: x.actor || "—", actorPid: x.actor_pid || null, target: x.target_name || null, targetPid: x.target_pid || null, detail: x.detail || null })) });
+  }
+
+  // --- acciones sobre una cuenta ---
+  if (["/ban", "/unban", "/reset"].includes(sub) && request.method === "POST") {
+    if (!sameOrigin(request)) return fail(403, "origen", "Petición no permitida.");
+    const body = await readBody();
+    const pid = String(body && body.pid || "");
+    if (!PID.test(pid)) return fail(400, "entrada", "Usuario no válido.");
+    const t = await env.DB.prepare("SELECT uid, pid, name, is_mod, is_owner, needs_setup FROM users WHERE pid = ?").bind(pid).first();
+    if (!t) return fail(404, "perfil", "No existe ese perfil.");
+    if (t.uid === uid) return fail(400, "entrada", sub === "/reset" ? "Para reiniciar tu propia cuenta usa «Reiniciar mi cuenta» en Configuración." : "No puedes aplicarte esto a ti mismo.");
+    if (t.is_owner) return fail(409, "dueno", "No se puede aplicar al dueño.");
+    if (t.is_mod && !owner) return fail(403, "permiso", "Solo el dueño puede actuar sobre otros moderadores.");
+
+    if (sub === "/ban") {
+      const minutes = Number(body.minutes);
+      if (!(minutes === 0 ? owner : BAN_MINUTES.includes(minutes))) return fail(400, "entrada", minutes === 0 ? "Solo el dueño puede suspender por tiempo indefinido." : "Duración no válida.");
+      const reason = cleanText(body.reason).slice(0, 120) || null;
+      const until = minutes === 0 ? FOREVER : now + minutes * 60000;
+      await env.DB.prepare("INSERT OR REPLACE INTO chat_bans (uid, until, reason, by_uid, at) VALUES (?,?,?,?,?)").bind(t.uid, until, reason, uid, now).run();
+      const label = minutes === 0 ? "indefinida" : minutes < 60 ? `${minutes} min` : minutes < 1440 ? `${minutes / 60} h` : `${minutes / 1440} día${minutes === 1440 ? "" : "s"}`;
+      await logMod(env, uid, "suspender", t, `${label}${reason ? ` · ${reason}` : ""}`);
+      return reply(200, { ok: true, ban: { until: minutes === 0 ? null : until, reason } });
+    }
+    if (sub === "/unban") {
+      const r = await env.DB.prepare("DELETE FROM chat_bans WHERE uid = ?").bind(t.uid).run();
+      if (r.meta && r.meta.changes) await logMod(env, uid, "levantar", t, null);
+      return reply(200, { ok: true });
+    }
+    // /reset
+    if (t.needs_setup) return fail(409, "estado", "Esa cuenta ya está reiniciada.");
+    await resetProfile(env, t.uid);
+    await logMod(env, uid, "reiniciar", t, cleanText(body.reason).slice(0, 120) || null);
+    return reply(200, { ok: true });
+  }
+
+  return fail(404, "ruta", "No existe.");
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     if (pathname === "/api/utesa-login") return login(request, env);
-    if (pathname === "/api/user") return userApi(request, env);
+    if (pathname === "/api/user" || pathname === "/api/user/reset") return userApi(request, env);
+    if (pathname.startsWith("/api/mod/")) return modApi(request, env, pathname.slice("/api/mod".length));
     if (pathname === "/api/profile") return profileApi(request, env);
     if (pathname === "/api/utesa-verify") return verifyApi(request, env);
     if (pathname === "/api/people" || pathname === "/api/friends" || pathname === "/api/mods" || pathname === "/api/users/delete" || pathname === "/api/groups" || pathname === "/api/dm/read") return socialApi(request, env, pathname.slice(4));

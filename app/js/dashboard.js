@@ -67,12 +67,12 @@ function getEffectiveDoneSet() {
 
 /* ---------- Toast ---------- */
 let toastTimer = null;
-function showToast(text) {
+function showToast(text, ms = 2200) {
   const t = document.getElementById("toast");
   t.textContent = text;
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  toastTimer = setTimeout(() => t.classList.remove("show"), ms);
 }
 
 /* ---------- Guard de sesión ---------- */
@@ -138,6 +138,16 @@ function boot() {
   }, "chat de la comunidad");
   safeInit(initVideo, "video tutorial");
   render(); // segundo pintado ya con la app visible: el mapa necesita medir tamaños reales (zoom y caminos)
+  announceOnce();
+}
+
+/** Novedades: se muestran una sola vez por navegador. */
+function announceOnce() {
+  const KEY = "malla_news_moderacion_v1";
+  try { if (localStorage.getItem(KEY)) return; localStorage.setItem(KEY, "1"); } catch { return; }
+  setTimeout(() => showToast(userData.admin
+    ? "🛡️ Actualización de moderación: el panel del equipo (cuentas, suspensiones, reinicios y registro) ahora está en Configuración → Moderación." 
+    : "🛡️ Actualización de moderación: ahora puedes empezar de cero desde Configuración → «Empezar de cero».", 8000), 1800);
 }
 
 onAuthStateChanged(auth, async (user) => {

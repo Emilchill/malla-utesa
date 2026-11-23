@@ -537,12 +537,12 @@ function clothesArt(style, color, skin, shade, gid) {
       break; }
     case 29: // 🦌 suéter de reno
       art = `<path d="${BODY}" fill="${color}"/>` + `<g><circle cx="50" cy="91" r="6.4" fill="#8B5A2B"/><path d="M45 86 L41 79 M41 79 L38 80 M43 83 L40 83 M55 86 L59 79 M59 79 L62 80 M57 83 L60 83" stroke="#5A3A2A" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="47.6" cy="89.6" r="1" fill="#1b1b1b"/><circle cx="52.4" cy="89.6" r="1" fill="#1b1b1b"/><circle cx="50" cy="94" r="2.2" fill="#E5484D"/></g>` +
-        `<g fill="#fff" opacity=".9"><circle cx="28" cy="88" r="1.2"/><circle cx="72" cy="90" r="1.2"/><circle cx="34" cy="97" r="1"/><circle cx="66" cy="98" r="1"/><circle cx="22" cy="96" r="1"/><circle cx="78" cy="84" r="1"/></g>` + `<rect x="12" y="97.4" width="76" height="3" fill="#fff" opacity=".85"/>` + crewHole + sleeves("#fff") + shadeHalf;
+        clip(`<g fill="#fff" opacity=".9"><circle cx="28" cy="88" r="1.2"/><circle cx="72" cy="90" r="1.2"/><circle cx="34" cy="97" r="1"/><circle cx="66" cy="98" r="1"/><circle cx="22" cy="96" r="1"/><circle cx="78" cy="84" r="1"/></g><rect x="0" y="97.4" width="100" height="3" fill="#fff" opacity=".85"/>`) + crewHole + sleeves("#fff") + shadeHalf;
       break;
     case 30: // 🎅 traje de Santa Claus
       art = `<path d="${BODY}" fill="#D7263D"/><rect x="46.4" y="77" width="7.2" height="23" fill="#fff"/>` +
         `<path d="M39 77.4 Q50 90 61 77.4 Q50 74 39 77.4Z" fill="#fff"/><path d="M37 76.6 Q50 92 63 76.6" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>` +
-        `<rect x="12" y="92.4" width="76" height="5" fill="#1b1b1b"/><rect x="44.4" y="91.4" width="11.2" height="7" rx="1.2" fill="#F5C542" stroke="#C9962B" stroke-width=".8"/><rect x="47" y="93.4" width="6" height="3" fill="#1b1b1b"/>` +
+        clip(`<rect x="0" y="92.4" width="100" height="5" fill="#1b1b1b"/>`) + `<rect x="44.4" y="91.4" width="11.2" height="7" rx="1.2" fill="#F5C542" stroke="#C9962B" stroke-width=".8"/><rect x="47" y="93.4" width="6" height="3" fill="#1b1b1b"/>` +
         line("M19 100 Q21 88 29 82 M81 100 Q79 88 71 82", "#fff", 2.2) + shadeHalf;
       noNeck = true; break;
     case 31: { // 💡 suéter con luces
@@ -558,7 +558,7 @@ function clothesArt(style, color, skin, shade, gid) {
         dot(50, 93.6, 1.2, "#2F8F4E") + dot(50, 98, 1.2, "#2F8F4E") + sleeves();
       break; }
     case 33: { // 🧝 chaleco de elfo
-      art = `<path d="${BODY}" fill="#fff"/>` + [0, 1, 2, 3, 4].map(i => `<rect x="12" y="${80 + i * 4.8}" width="76" height="2.4" fill="#E5484D"/>`).join("") +
+      art = `<path d="${BODY}" fill="#fff"/>` + clip([0, 1, 2, 3, 4].map(i => `<rect x="0" y="${80 + i * 4.8}" width="100" height="2.4" fill="#E5484D"/>`).join("")) +
         `<path d="M26 100 L28 88 L33 84 L38 79 L44 84 L50 80 L56 84 L62 79 L67 84 L72 88 L74 100Z" fill="#2F8F4E" stroke="#1d6b36" stroke-width=".9" stroke-linejoin="round"/>` +
         `<rect x="26" y="92.6" width="48" height="3.6" fill="#7a4a1d"/><rect x="45" y="91.8" width="10" height="5.2" rx="1" fill="#F5C542" stroke="#C9962B" stroke-width=".7"/>` +
         `<circle cx="38" cy="86" r="1.4" fill="#F5C542"/><circle cx="62" cy="86" r="1.4" fill="#F5C542"/>` + `<path d="M44.4 77.3 L50 84 L55.6 77.3Z" fill="${shade}"/>`;

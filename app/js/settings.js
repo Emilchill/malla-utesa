@@ -13,6 +13,8 @@ import { framedAvatar, MOD_FRAMES, MOD_BY_ID } from "./frames.js";
 import { rankCardHtml } from "./ranks.js";
 import { isOn as chatNotifOn, turnOn as chatNotifOn_, turnOff as chatNotifOff } from "./chat-prefs.js";
 import { openModal, closeModal } from "./modal.js";
+import { api as http } from "./store.js";
+import { initModeration } from "./moderation.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -394,7 +396,37 @@ export function initSettings(api) {
   });
 
   /* ---------- Abrir ---------- */
+  /* ---------- Pestañas: Mi cuenta / Moderación (solo el equipo) ---------- */
+  let modPanel = null;
+  function setSettingsTab(t, section) {
+    const isMod = t === "mod" && !!api.getUser().admin;
+    $("set-tabs").querySelectorAll("[data-set-tab]").forEach(b => b.setAttribute("aria-selected", String((b.dataset.setTab === "mod") === isMod)));
+    $("set-pane-cuenta").hidden = isMod;
+    $("set-pane-mod").hidden = !isMod;
+    if (isMod) {
+      if (!modPanel) modPanel = initModeration($("set-pane-mod"), { me: () => api.getUser(), toast: api.toast });
+      modPanel.show(section);
+    }
+  }
+  $("set-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-set-tab]"); if (b) setSettingsTab(b.dataset.setTab); });
+  // el chat ya no tiene panel de moderación: su botón abre esta pestaña
+  window.addEventListener("open-moderation", () => { openSettings(); setSettingsTab("mod"); });
+
+  /* ---------- Empezar de cero (reiniciar mi cuenta) ---------- */
+  $("set-restart-in").addEventListener("input", (e) => { $("set-restart-go").disabled = e.target.value.trim().toUpperCase() !== "REINICIAR"; setMsg($("set-restart-msg"), ""); });
+  async function restartAccount() {
+    const btn = $("set-restart-go");
+    btn.disabled = true;
+    const r = await http("POST", "/api/user/reset", { confirm: "REINICIAR" }).catch(() => null);
+    if (r && r.status === 200) { window.location.href = "profile.html"; return; }
+    btn.disabled = false;
+    setMsg($("set-restart-msg"), (r && r.data && r.data.message) || "No se pudo reiniciar tu cuenta. Revisa tu conexión.");
+  }
+
   function openSettings() {
+    $("set-tabs").hidden = !api.getUser().admin;
+    setSettingsTab("cuenta");
+    $("set-restart-in").value = ""; $("set-restart-go").disabled = true; setMsg($("set-restart-msg"), "");
     if (notifBox) notifBox.checked = chatNotifOn();
     if (dirBox) dirBox.checked = !api.getUser().dirHidden;
     if (onlBox) onlBox.checked = !api.getUser().hideOnline;
@@ -435,7 +467,8 @@ export function initSettings(api) {
       twoStep(t.closest("#set-reset-progress"), "¿Borrar todo mi avance? Toca otra vez", async () => {
         try { await api.resetProgress(); renderCareer(); } catch { api.toast("No se pudo reiniciar. Intenta de nuevo."); }
       });
-    } else if (t.closest("#set-logout")) api.signOut();
+    } else if (t.closest("#set-restart-go")) restartAccount();
+    else if (t.closest("#set-logout")) api.signOut();
   });
   root.addEventListener("change", (e) => {
     if (e.target.id === "set-pw-show") {

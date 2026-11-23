@@ -17,6 +17,18 @@ pénsum 2023 publicado y no están incluidas.
 > estudiantes. Los datos del pensum pueden contener errores de transcripción —
 > siempre verifica tu avance real con tu coordinación de carrera.
 
+## Actualización de moderación (2026-11-22)
+
+* **Configuración → Moderación** (solo el equipo): resumen del sitio, **Cuentas** (todas, con buscador y filtros), **Reportes**
+  (movidos desde el chat), **Registro** de lo que hace el equipo y **Herramientas** (vaciar chats). El panel del chat se quitó.
+* **Suspensiones del chat por tiempo** (10 min a 30 días; indefinida solo el dueño) con motivo: la persona sigue leyendo,
+  no puede escribir ni editar, ve hasta cuándo y por qué, y se levanta sola al vencer.
+* **Reiniciar cuentas**: el equipo puede reiniciar a un estudiante (p. ej. nombre o personaje inapropiado) y cada persona
+  puede **empezar de cero** desde Configuración. Se vuelve a pasar por la bienvenida (nombre, personaje, carrera, tema).
+  Reiniciar no levanta una suspensión.
+* Aviso de novedades una sola vez al entrar.
+* Arreglo: en el chaleco de elfo, el traje de Santa y el suéter de reno había piezas que se salían de la silueta del cuerpo.
+
 ## Estructura de archivos
 
 ```
