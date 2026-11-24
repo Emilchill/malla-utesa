@@ -19,7 +19,7 @@ const FILTERS = [["all", "Todas"], ["banned", "Suspendidas"], ["reported", "Repo
 const ACTIONS = {
   suspender: ["⛔", "suspendió a"], levantar: ["✅", "levantó la suspensión de"], reiniciar: ["♻️", "reinició la cuenta de"],
   ocultar: ["🙈", "ocultó un mensaje de"], restaurar: ["↩️", "restauró"], vaciar: ["🧹", "vació"], eliminar: ["🗑️", "eliminó a"],
-  "hacer-mod": ["🛡️", "nombró moderador a"], "quitar-mod": ["➖", "quitó de moderación a"],
+  "hacer-mod": ["🛡️", "nombró moderador a"], "quitar-mod": ["➖", "quitó de moderación a"], reactivar: ["🔄", "reactivó la cuenta de"],
 };
 
 /** Botón de dos pasos: el primer toque pide confirmar, el segundo ejecuta. */
@@ -42,6 +42,7 @@ export function initModeration(root, ctx) {
       <button type="button" role="tab" data-mtab="cuentas">👥 Cuentas</button>
       <button type="button" role="tab" data-mtab="reportes">🚩 Reportes <i class="mod-count" hidden></i></button>
       <button type="button" role="tab" data-mtab="registro">📜 Registro</button>
+      <button type="button" role="tab" data-mtab="eliminadas" hidden>🗑️ Eliminadas</button>
       <button type="button" role="tab" data-mtab="herramientas">🧹 Herramientas</button>
     </div>
     <div class="mod-pane" data-mpane="cuentas">
@@ -52,6 +53,10 @@ export function initModeration(root, ctx) {
     </div>
     <div class="mod-pane" data-mpane="reportes" hidden><ul class="mod-list mod-reports"></ul></div>
     <div class="mod-pane" data-mpane="registro" hidden><ul class="mod-list mod-log"></ul></div>
+    <div class="mod-pane" data-mpane="eliminadas" hidden>
+      <p class="set-text">Cuentas que eliminaste. <b>Reactivar</b> les devuelve el acceso y, si se guardó una copia, su nombre, personaje, carrera y avance. Sus mensajes, amistades y grupos no se recuperan, y si eran moderadores hay que nombrarlos de nuevo.</p>
+      <ul class="mod-list mod-deleted"></ul>
+    </div>
     <div class="mod-pane" data-mpane="herramientas" hidden>
       <h4 class="set-title">Vaciar chats</h4>
       <p class="set-text">Borra de forma definitiva los mensajes de una sala pública. Los chats privados y los grupos nunca se tocan.</p>
@@ -60,7 +65,7 @@ export function initModeration(root, ctx) {
       <ul class="mod-help">
         <li><b>Suspender:</b> la persona sigue leyendo, pero no puede escribir ni editar en ningún chat hasta que venza. Se levanta sola.</li>
         <li><b>Reiniciar:</b> borra nombre, personaje, avance, logros y preferencias; al volver a entrar configura su perfil desde cero. Conserva amistades, mensajes y rol.</li>
-        <li><b>Eliminar</b> (solo el dueño): borra la cuenta por completo y no puede volver.</li>
+        <li><b>Eliminar</b> (solo el dueño): borra la cuenta y sus mensajes, amistades y grupos, y no puede volver a entrar. Queda en <b>Eliminadas</b>, desde donde se puede reactivar con su perfil y su avance.</li>
         <li>Los moderadores actúan sobre estudiantes; sobre otros moderadores solo el dueño. Todo queda en el <b>Registro</b>.</li>
       </ul>
     </div>`;
@@ -73,6 +78,7 @@ export function initModeration(root, ctx) {
     if (t === "cuentas") loadAccounts(true);
     else if (t === "reportes") loadReports();
     else if (t === "registro") loadLog();
+    else if (t === "eliminadas") loadDeleted();
     else paintWipe();
   }
 
@@ -81,6 +87,7 @@ export function initModeration(root, ctx) {
     const r = await api("GET", "/api/mod/summary").catch(() => null);
     if (!r || r.status !== 200) { $(".mod-summary").innerHTML = `<p class="set-text">No se pudo cargar el resumen.</p>`; return; }
     owner = !!r.data.owner;
+    root.querySelector('[data-mtab="eliminadas"]').hidden = !owner;
     const s = r.data.summary;
     const card = (n, l, f) => `<button type="button" class="mod-stat"${f ? ` data-jump="${f}"` : ""}><b>${n}</b><span>${l}</span></button>`;
     $(".mod-summary").innerHTML = card(s.users, "cuentas", "all") + card(s.online, "en línea") + card(s.newWeek, "nuevas esta semana", "new") +
@@ -152,9 +159,10 @@ export function initModeration(root, ctx) {
     if (kind === "mod" || kind === "unmod") { btn.disabled = true; return done(await api("POST", "/api/mods", { pid, on: kind === "mod" }).catch(() => null), "Rol actualizado ✓"); }
     if (kind === "delete") {
       return twoStep(btn, "¿Eliminar? Toca otra vez", async () => {
-        if (!confirm(`¿Eliminar DEFINITIVAMENTE a ${a.name}?\n\nSe borran su cuenta, sus mensajes, sus amistades y su lugar en los grupos, y no podrá volver a entrar. No se puede deshacer.`)) return;
+        const reason = prompt(`¿Eliminar a ${a.name}?\n\nSe borran sus mensajes, sus amistades y su lugar en los grupos, y no podrá entrar. Queda en «Eliminadas»: podrás reactivarla con su perfil y su avance, pero los mensajes y amistades no vuelven.\n\nMotivo (opcional):`, "");
+        if (reason === null) return; // canceló
         btn.disabled = true;
-        done(await api("POST", "/api/users/delete", { pid }).catch(() => null), "Usuario eliminado");
+        done(await api("POST", "/api/users/delete", { pid, reason }).catch(() => null), "Cuenta eliminada · puedes reactivarla en «Eliminadas»");
       });
     }
   }
@@ -187,6 +195,19 @@ export function initModeration(root, ctx) {
     }).join("") : `<li class="mod-empty">Todavía no hay acciones registradas.</li>`;
   }
 
+  /* ---------- cuentas eliminadas (solo el dueño) ---------- */
+  async function loadDeleted() {
+    const ul = $(".mod-deleted");
+    ul.innerHTML = `<li class="mod-empty">Cargando…</li>`;
+    const r = await api("GET", "/api/mod/deleted").catch(() => null);
+    if (!r || r.status !== 200) { ul.innerHTML = `<li class="mod-empty">${esc(r?.data?.message || "No se pudo cargar la lista.")}</li>`; return; }
+    ul.innerHTML = r.data.deleted.length ? r.data.deleted.map(d => `<li class="mod-acc" data-del="${esc(d.pid || "")}">
+        <div class="mod-acc-txt"><strong>${esc(d.name || "Cuenta eliminada (sin datos guardados)")}</strong> <small class="muted">${esc(PENSUMS[d.career]?.key || d.career || "")}</small>
+          <span class="mod-meta">Eliminada ${ago(d.at)}${d.by ? ` por ${esc(d.by)}` : ""}${d.reason ? ` · ${esc(d.reason)}` : ""}${d.restorable ? "" : " · al reactivar tendrá que configurar un perfil nuevo"}</span></div>
+        ${d.pid ? `<div class="mod-actions"><button type="button" class="btn btn-ghost btn-sm" data-react="${esc(d.pid)}">Reactivar</button></div>` : ""}</li>`).join("")
+      : `<li class="mod-empty">No hay cuentas eliminadas.</li>`;
+  }
+
   /* ---------- herramientas ---------- */
   function paintWipe() {
     $(".mod-wipe").innerHTML = `<button type="button" class="btn btn-ghost btn-sm" data-wipe="general">Vaciar General</button><button type="button" class="btn btn-ghost btn-sm" data-wipe="carrera">Vaciar la sala de mi carrera</button>${owner ? '<button type="button" class="btn btn-ghost btn-sm mod-danger" data-wipe="all">Vaciar todas las salas públicas</button>' : ""}`;
@@ -209,6 +230,13 @@ export function initModeration(root, ctx) {
     const a = t.closest("[data-act]"); if (a) return act(a.dataset.act, a.closest("[data-pid]").dataset.pid, a);
     const h = t.closest("[data-hide]");
     if (h) { h.disabled = true; const r = await api("DELETE", `/api/chat?id=${h.dataset.hide}`).catch(() => null); if (r && r.status === 200) { ctx.toast("Listo ✓"); loadReports(); loadSummary(); } else { h.disabled = false; ctx.toast("No se pudo ocultar."); } return; }
+    const re = t.closest("[data-react]");
+    if (re) return twoStep(re, "¿Reactivar? Toca otra vez", async () => {
+      re.disabled = true;
+      const r = await api("POST", "/api/mod/reactivate", { pid: re.dataset.react }).catch(() => null);
+      if (r && r.status === 200) { ctx.toast(r.data.restored ? "Cuenta reactivada con su perfil ✓" : "Cuenta reactivada: configurará un perfil nuevo ✓"); loadDeleted(); loadSummary(); }
+      else { re.disabled = false; ctx.toast(r?.data?.message || "No se pudo reactivar."); }
+    });
     const see = t.closest("[data-see]"); if (see) { filter = "all"; q = see.dataset.see; $(".mod-q").value = q; return setTab("cuentas"); }
     const w = t.closest("[data-wipe]");
     if (w) {

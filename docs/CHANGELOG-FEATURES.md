@@ -27,6 +27,7 @@ pénsum 2023 publicado y no están incluidas.
   puede **empezar de cero** desde Configuración. Se vuelve a pasar por la bienvenida (nombre, personaje, carrera, tema).
   Reiniciar no levanta una suspensión.
 * Aviso de novedades una sola vez al entrar.
+* **Cuentas eliminadas** (2026-11-24): quedan registradas (quién, cuándo y por qué) en Moderación → Eliminadas, y el dueño puede **reactivarlas** con su perfil y su avance. Mensajes, amistades y grupos no se recuperan.
 * Arreglo: en el chaleco de elfo, el traje de Santa y el suéter de reno había piezas que se salían de la silueta del cuerpo.
 
 ## Estructura de archivos

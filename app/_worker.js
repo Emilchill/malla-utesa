@@ -399,6 +399,10 @@ async function ensureSchema(db) {
   for (const col of ["hidden_at INTEGER", "hidden_by TEXT", "edited_at INTEGER"]) {
     try { await db.prepare(`ALTER TABLE messages ADD COLUMN ${col}`).run(); } catch { /* ya existe */ }
   }
+  // cuentas eliminadas: quién era, quién la eliminó, por qué y una copia del perfil para poder reactivarla
+  for (const col of ["pid TEXT", "name TEXT", "career TEXT", "snapshot TEXT", "by_uid TEXT", "reason TEXT"]) {
+    try { await db.prepare(`ALTER TABLE banned ADD COLUMN ${col}`).run(); } catch { /* ya existe */ }
+  }
   // copia del texto en el momento del reporte: así borrar o editar el mensaje no destruye la evidencia
   try { await db.prepare("ALTER TABLE reports ADD COLUMN text TEXT").run(); } catch { /* ya existe */ }
   schemaReady = true;
@@ -1179,9 +1183,17 @@ async function socialApi(request, env, sub) {
     const body = await readBody();
     const pid = String(body && body.pid || "");
     if (!PID.test(pid)) return fail(400, "entrada", "Usuario no válido.");
-    const t = await env.DB.prepare("SELECT uid, is_owner, name FROM users WHERE pid = ?").bind(pid).first();
+    const t = await env.DB.prepare("SELECT * FROM users WHERE pid = ?").bind(pid).first();
     if (!t) return fail(404, "perfil", "No existe ese perfil.");
     if (t.uid === uid) return fail(400, "entrada", "No puedes eliminarte a ti mismo.");
+    const delReason = cleanText(body && body.reason).slice(0, 120) || null;
+    // copia del perfil (sin rol ni marcos/artículos del equipo) para poder reactivar la cuenta más adelante
+    const snapshot = JSON.stringify({
+      name: t.name, career: t.career, theme: t.theme || null, avatar: t.avatar ? stripExcl(t.avatar) : null, avatar_bg: t.avatar_bg || null,
+      frame: t.frame && !String(t.frame).startsWith("MOD-") ? t.frame : null, done: t.done || "[]", utesa_sync: t.utesa_sync || null,
+      earned: t.earned || "[]", verified_at: t.verified_at || null, verified_pending: t.verified_pending || null, verified_src: t.verified_src || null,
+      created_at: t.created_at, dir_hidden: t.dir_hidden || 0, hide_online: t.hide_online || 0, was_mod: !!t.is_mod,
+    });
     if (t.is_owner) return fail(409, "dueno", "No se puede eliminar al dueño.");
     const owned = await env.DB.prepare("SELECT id FROM chat_groups WHERE owner_uid = ?").bind(t.uid).all();
     for (const g of owned.results) { // sus grupos pasan a otro miembro; si no queda nadie, se borran
@@ -1201,11 +1213,11 @@ async function socialApi(request, env, sub) {
       env.DB.prepare("DELETE FROM group_members WHERE uid = ?").bind(t.uid),
       env.DB.prepare("DELETE FROM dm_reads WHERE uid = ?").bind(t.uid),
       env.DB.prepare("DELETE FROM users WHERE uid = ?").bind(t.uid),
-      env.DB.prepare("INSERT OR IGNORE INTO banned (uid, at) VALUES (?, ?)").bind(t.uid, Date.now()),
+      env.DB.prepare("INSERT OR REPLACE INTO banned (uid, at, pid, name, career, snapshot, by_uid, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(t.uid, Date.now(), pid, t.name, t.career, snapshot, uid, delReason),
       env.DB.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('chat_epoch', ?)").bind(String(Date.now())), // los chats abiertos se recargan y ya no muestran sus mensajes
       env.DB.prepare("DELETE FROM chat_bans WHERE uid = ?").bind(t.uid),
     ]);
-    await logMod(env, uid, "eliminar", { pid, name: t.name }, "cuenta eliminada");
+    await logMod(env, uid, "eliminar", { pid, name: t.name }, delReason || "cuenta eliminada");
     return reply(200, { ok: true });
   }
 
@@ -1357,6 +1369,44 @@ async function modApi(request, env, sub) {
          FROM mod_log l LEFT JOIN users u ON u.uid = l.actor_uid ORDER BY l.id DESC LIMIT 100`
     ).all();
     return reply(200, { ok: true, log: results.map(x => ({ id: x.id, at: x.at, action: x.action, actor: x.actor || "—", actorPid: x.actor_pid || null, target: x.target_name || null, targetPid: x.target_pid || null, detail: x.detail || null })) });
+  }
+
+  // --- cuentas eliminadas (solo el dueño: es quien elimina) ---
+  if (sub === "/deleted" && request.method === "GET") {
+    if (!owner) return fail(403, "permiso", "Solo el dueño ve las cuentas eliminadas.");
+    // las eliminadas antes de guardar el pid: se completa una vez (el pid se deriva del uid)
+    const old = await env.DB.prepare("SELECT uid FROM banned WHERE pid IS NULL LIMIT 200").all();
+    for (const o of old.results) await env.DB.prepare("UPDATE banned SET pid = ? WHERE uid = ?").bind(await pidOf(o.uid), o.uid).run();
+    const { results } = await env.DB.prepare(
+      `SELECT b.at, b.pid, b.name, b.career, b.reason, (b.snapshot IS NOT NULL) AS restorable, u.name AS by_name
+         FROM banned b LEFT JOIN users u ON u.uid = b.by_uid ORDER BY b.at DESC LIMIT 200`
+    ).all();
+    return reply(200, { ok: true, deleted: results.map((r, i) => ({
+      key: r.pid || `old-${r.at}-${i}`, pid: r.pid || null, name: r.name || null, career: r.career || null, at: r.at,
+      reason: r.reason || null, by: r.by_name || null, restorable: !!r.restorable,
+    })) });
+  }
+  if (sub === "/reactivate" && request.method === "POST") {
+    if (!owner) return fail(403, "permiso", "Solo el dueño puede reactivar cuentas.");
+    if (!sameOrigin(request)) return fail(403, "origen", "Petición no permitida.");
+    const body = await readBody();
+    const pid = String(body && body.pid || "");
+    if (!PID.test(pid)) return fail(400, "entrada", "Cuenta no válida.");
+    const b = await env.DB.prepare("SELECT uid, name, snapshot FROM banned WHERE pid = ?").bind(pid).first();
+    if (!b) return fail(404, "perfil", "No hay una cuenta eliminada con ese id.");
+    let snap = null;
+    try { snap = b.snapshot ? JSON.parse(b.snapshot) : null; } catch { snap = null; }
+    if (snap && snap.name && snap.career) {
+      // vuelve con su perfil, su avance y sus logros; sin rol de moderador (se nombra de nuevo si hace falta)
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO users (uid, pid, name, career, theme, avatar, avatar_bg, frame, done, utesa_sync, earned, verified_at, verified_pending, verified_src,
+          dir_hidden, hide_online, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(b.uid, pid, snap.name, snap.career, snap.theme, snap.avatar, snap.avatar_bg, snap.frame, snap.done || "[]", snap.utesa_sync, snap.earned || "[]",
+        snap.verified_at, snap.verified_pending, snap.verified_src, snap.dir_hidden || 0, snap.hide_online || 0, snap.created_at || now, now).run();
+    }
+    await env.DB.prepare("DELETE FROM banned WHERE uid = ?").bind(b.uid).run();
+    await logMod(env, uid, "reactivar", { pid, name: b.name }, snap ? "con su perfil" : "sin copia del perfil: configura uno nuevo");
+    return reply(200, { ok: true, restored: !!snap });
   }
 
   // --- acciones sobre una cuenta ---

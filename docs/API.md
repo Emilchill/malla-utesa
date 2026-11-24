@@ -57,7 +57,9 @@ Todo lo implementa `app/_worker.js`. Convenciones:
 |---|---|---|
 | `GET /api/mods` | equipo | Lista de dueño y moderadores. |
 | `POST /api/mods` | dueño | `{ pid, on }`. Nombrar/quitar moderador (no a sí mismo ni al dueño). Quitar el rol retira marcos y artículos exclusivos. |
-| `POST /api/users/delete` | dueño | `{ pid }`. Elimina por completo (ver arquitectura). No a sí mismo ni al dueño. |
+| `POST /api/users/delete` | dueño | `{ pid, reason? }`. Elimina la cuenta (mensajes, amistades, grupos) y bloquea el acceso. Guarda una copia del perfil (nombre, carrera, personaje, avance y logros; sin rol ni artículos del equipo) para poder reactivarla. No a sí mismo ni al dueño. |
+| `GET /api/mod/deleted` | dueño | Cuentas eliminadas: `pid, name, career, at, reason, by, restorable` (las anteriores a este cambio salen sin nombre). |
+| `POST /api/mod/reactivate` | dueño | `{ pid }`. Devuelve el acceso. Con copia (`restored: true`) vuelve con su perfil y avance; sin copia, configura uno nuevo. Mensajes, amistades y grupos no se recuperan; el rol de moderador tampoco. |
 | `GET /api/mod/summary` | equipo | `summary{ users, online, newWeek, bans, reports, messagesDay }` y `owner`. |
 | `GET /api/mod/accounts?filter=&q=&offset=` | equipo | Todas las cuentas (también las ocultas del directorio), 50 por página. `filter`: `all, banned, reported, staff, new, reset`. Cada una: `pid, name, career, avatar, role, created, seen, online, reset, verified, hidden, pct, msgs, reported, ban`. Sin uid ni correo. |
 | `POST /api/mod/ban` | equipo | `{ pid, minutes, reason? }`. Suspende del chat: `minutes` ∈ 10, 60, 360, 1440, 4320, 10080, 43200; `0` = indefinida (solo el dueño). Mientras dure, `POST`/`PATCH /api/chat` responden `403 suspendido` con `ban`. Vence sola. |

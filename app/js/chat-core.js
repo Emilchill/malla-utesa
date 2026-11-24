@@ -908,9 +908,10 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
       const du = e.target.closest("[data-deluser]");
       if (du) {
         const pid = du.dataset.deluser, name = profileCache?.name || "esta persona";
-        if (!confirm(`¿Eliminar DEFINITIVAMENTE a ${name}?\n\nSe borran su cuenta, sus mensajes, sus amistades y su lugar en los grupos, y no podrá volver a entrar. No se puede deshacer.`)) return;
+        const reason = prompt(`¿Eliminar a ${name}?\n\nSe borran sus mensajes, sus amistades y su lugar en los grupos, y no podrá entrar. Queda en Configuración → Moderación → Eliminadas: podrás reactivarla con su perfil y su avance, pero los mensajes y amistades no vuelven.\n\nMotivo (opcional):`, "");
+        if (reason === null) return; // canceló
         du.disabled = true;
-        const r = await api("POST", "/api/users/delete", { pid }).catch(() => null);
+        const r = await api("POST", "/api/users/delete", { pid, reason }).catch(() => null);
         if (r && r.status === 200) {
           closeModal("chat-profile-overlay");
           dir.people = dir.people.filter(x => x.pid !== pid);

@@ -108,4 +108,32 @@ r = await call("POST", "/api/mod/ban", T.mia(), { pid: pid.sol, minutes: 60 }, u
 r = await call("GET", "/api/mod/accounts?q=sol", T.boss());
 ok("la cuenta muestra mensajes y suspensión", r[1].accounts[0].msgs >= 2 && r[1].accounts[0].ban, r[1].accounts[0]);
 
+// ===== cuentas eliminadas: registro y reactivación =====
+await call("PUT", "/api/user", T.leo(), { fields: { done: ["MAT-170", "INF-164"] } });
+sq.prepare("UPDATE users SET avatar = ? WHERE uid = 'leo'").run('c1:{"k":"p","h":5,"xh":1}'); // como si hubiera sido del equipo
+r = await call("POST", "/api/users/delete", T.boss(), { pid: pid.leo, reason: "cuenta de prueba duplicada" });
+ok("el dueño elimina una cuenta con motivo", r[0] === 200, r);
+r = await call("GET", "/api/user", T.leo());
+ok("la cuenta eliminada no puede entrar", r[0] === 403 && r[1].code === "eliminada", r);
+r = await call("GET", "/api/mod/deleted", T.mia());
+ok("un moderador no ve las eliminadas", r[0] === 403, r);
+sq.prepare("INSERT INTO banned (uid, at) VALUES ('vieja', 1)").run(); // eliminada antes de este cambio (sin datos)
+r = await call("GET", "/api/mod/deleted", T.boss());
+const del = r[1].deleted.find(d => d.pid === pid.leo);
+ok("el dueño ve la eliminada: nombre, carrera, motivo, quién y fecha", del && del.name === "Leo Nuevo" && del.career === "ISC" && del.reason === "cuenta de prueba duplicada" && del.by === "Jefe" && del.restorable === true, del);
+const vieja = r[1].deleted.find(d => d.at === 1);
+ok("las eliminadas antes del cambio salen con su pid calculado y sin copia", vieja && /^[0-9a-f]{16}$/.test(vieja.pid) && vieja.restorable === false && vieja.name === null, vieja);
+r = await call("POST", "/api/mod/reactivate", T.mia(), { pid: pid.leo });
+ok("un moderador no reactiva", r[0] === 403, r);
+r = await call("POST", "/api/mod/reactivate", T.boss(), { pid: pid.leo });
+ok("el dueño reactiva", r[0] === 200 && r[1].restored === true, r);
+r = await call("GET", "/api/user", T.leo());
+ok("vuelve con su nombre, carrera y avance, el mismo pid y sin artículos del equipo", r[0] === 200 && r[1].user.name === "Leo Nuevo" && r[1].user.pid === pid.leo && r[1].user.done.length === 2 && !/xh/.test(r[1].user.avatar || ""), r[1].user || r);
+r = await call("GET", "/api/mod/deleted", T.boss());
+ok("ya no sale en la lista de eliminadas", !r[1].deleted.some(d => d.pid === pid.leo), r[1].deleted);
+r = await call("POST", "/api/mod/reactivate", T.boss(), { pid: vieja.pid });
+ok("reactivar una vieja la deja entrar para configurar un perfil nuevo", r[0] === 200 && r[1].restored === false && (await call("GET", "/api/user", tok("vieja")))[0] === 404, r);
+r = await call("GET", "/api/mod/log", T.boss());
+ok("el registro anota eliminar (con motivo) y reactivar", r[1].log.some(l => l.action === "eliminar" && /duplicada/.test(l.detail)) && r[1].log.some(l => l.action === "reactivar"), r[1].log.slice(0, 4));
+
 finish();
