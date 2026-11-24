@@ -619,7 +619,11 @@ async function authed(request, env, needProfile = true) {
   const uid = claims.uid;
   await ensureSchema(env.DB);
   let row = await env.DB.prepare("SELECT * FROM users WHERE uid = ?").bind(uid).first();
-  if (!row && (await env.DB.prepare("SELECT 1 FROM banned WHERE uid = ?").bind(uid).first())) return fail(403, "eliminada", "Esta cuenta fue eliminada por la administración.");
+  if (!row) {
+    // cuenta eliminada: se le dice cuándo y, si la administración lo escribió, por qué
+    const gone = await env.DB.prepare("SELECT at, reason FROM banned WHERE uid = ?").bind(uid).first();
+    if (gone) return fail(403, "eliminada", "Esta cuenta fue eliminada por la administración.", { reason: gone.reason || null, at: gone.at || null });
+  }
   if (!row && needProfile) return fail(409, "sin-perfil", "Primero crea tu perfil.");
   if (row && !row.pid) {
     row.pid = await pidOf(uid);

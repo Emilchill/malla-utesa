@@ -114,7 +114,7 @@ sq.prepare("UPDATE users SET avatar = ? WHERE uid = 'leo'").run('c1:{"k":"p","h"
 r = await call("POST", "/api/users/delete", T.boss(), { pid: pid.leo, reason: "cuenta de prueba duplicada" });
 ok("el dueño elimina una cuenta con motivo", r[0] === 200, r);
 r = await call("GET", "/api/user", T.leo());
-ok("la cuenta eliminada no puede entrar", r[0] === 403 && r[1].code === "eliminada", r);
+ok("la cuenta eliminada no puede entrar y recibe el motivo y la fecha", r[0] === 403 && r[1].code === "eliminada" && r[1].reason === "cuenta de prueba duplicada" && r[1].at > 0, r);
 r = await call("GET", "/api/mod/deleted", T.mia());
 ok("un moderador no ve las eliminadas", r[0] === 403, r);
 sq.prepare("INSERT INTO banned (uid, at) VALUES ('vieja', 1)").run(); // eliminada antes de este cambio (sin datos)
