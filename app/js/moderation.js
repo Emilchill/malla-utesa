@@ -6,6 +6,7 @@
 import { api, serverNow } from "./store.js";
 import { framedAvatar } from "./frames.js";
 import { PENSUMS } from "./pensums-data.js";
+import { askDialog } from "./dialog.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 const ago = (ms) => {
@@ -159,7 +160,11 @@ export function initModeration(root, ctx) {
     if (kind === "mod" || kind === "unmod") { btn.disabled = true; return done(await api("POST", "/api/mods", { pid, on: kind === "mod" }).catch(() => null), "Rol actualizado ✓"); }
     if (kind === "delete") {
       return twoStep(btn, "¿Eliminar? Toca otra vez", async () => {
-        const reason = prompt(`¿Eliminar a ${a.name}?\n\nSe borran sus mensajes, sus amistades y su lugar en los grupos, y no podrá entrar. Queda en «Eliminadas»: podrás reactivarla con su perfil y su avance, pero los mensajes y amistades no vuelven.\n\nMotivo (opcional):`, "");
+        const reason = await askDialog({
+          title: `¿Eliminar a ${a.name}?`, tone: "danger", confirm: "Eliminar cuenta",
+          text: "Se borran sus mensajes, sus amistades y su lugar en los grupos, y no podrá entrar.\n\nQueda en «Eliminadas»: podrás reactivarla con su perfil y su avance, pero los mensajes y las amistades no vuelven.",
+          input: { label: "Motivo (opcional)", placeholder: "Ej.: cuenta duplicada, acoso…", maxlength: 120 },
+        });
         if (reason === null) return; // canceló
         btn.disabled = true;
         done(await api("POST", "/api/users/delete", { pid, reason }).catch(() => null), "Cuenta eliminada · puedes reactivarla en «Eliminadas»");

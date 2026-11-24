@@ -13,6 +13,7 @@ import { framedAvatar, MOD_BY_ID } from "./frames.js";
 import { ACH_BY_ID, TIERS, GLYPHS } from "./achievements.js";
 import { api, serverNow } from "./store.js";
 import { openModal, closeModal } from "./modal.js";
+import { askDialog } from "./dialog.js";
 import { subscribe, ping, pingId, pingInbox } from "./chat-live.js";
 import { skelRows, skelProfile } from "./motion.js";
 import { playPing, desktopNotify, isMuted, toggleMute, permState, turnOn } from "./chat-prefs.js";
@@ -622,8 +623,8 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     if (pid) body.pid = pid;
     if (on !== undefined) body.on = on === "1";
     if (action === "rename") body.name = ginfoEl.querySelector(".gi-name").value;
-    if (action === "leave" && !confirm("¿Salir de este grupo?")) return;
-    if (action === "delete" && !confirm("¿Borrar el grupo y todos sus mensajes? No se puede deshacer.")) return;
+    if (action === "leave" && !(await askDialog({ title: "¿Salir de este grupo?", text: "Dejarás de ver sus mensajes. Para volver, un administrador del grupo tendrá que agregarte otra vez.", icon: "leave", confirm: "Salir del grupo" }))) return;
+    if (action === "delete" && !(await askDialog({ title: "¿Borrar el grupo?", text: "Se borran el grupo y todos sus mensajes para todos sus miembros. No se puede deshacer.", tone: "danger", confirm: "Borrar grupo" }))) return;
     const r = await api("POST", "/api/groups", body).catch(() => null);
     if (!r || r.status !== 200) { setErr(r?.data?.message || "No se pudo completar la acción."); return; }
     setErr("");
@@ -889,10 +890,16 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
     if (rs) return restoreMsg(Number(rs.dataset.restore));
     const rep = e.target.closest("[data-report]");
     if (rep && !rep.dataset.done) {
-      const reason = prompt("¿Por qué reportas este mensaje? (opcional)", "");
-      if (reason === null) return;
+      const ans = await askDialog({
+        title: "Reportar mensaje", icon: "report", confirm: "Enviar reporte", requireChoice: true,
+        text: "El equipo de moderación lo revisará. Quien lo escribió no sabrá que fuiste tú.",
+        choices: ["Insultos u ofensas", "Acoso", "Spam o publicidad", "Contenido inapropiado", "Información falsa", "Otro motivo"],
+        input: { label: "Detalles (opcional)", placeholder: "Cuéntanos qué pasó…", maxlength: 90 },
+      });
+      if (!ans) return;
+      const reason = (ans.choice + (ans.text ? `: ${ans.text}` : "")).slice(0, 120);
       const r = await api("POST", "/api/chat/report", { id: Number(rep.dataset.report), reason }).catch(() => null);
-      if (r && r.status === 200) { rep.textContent = "Reportado ✓"; rep.dataset.done = "1"; } else setErr("No se pudo enviar el reporte.");
+      if (r && r.status === 200) { rep.textContent = "Reportado ✓"; rep.dataset.done = "1"; toast("Reporte enviado. ¡Gracias por avisar! ✓"); } else setErr("No se pudo enviar el reporte.");
       return;
     }
     if (e.target.closest(".msg-edit, .msg-edit-actions, .msg-actions")) return;
@@ -908,7 +915,11 @@ export function createChat({ root, me, isVisible = () => true, onUnread = () => 
       const du = e.target.closest("[data-deluser]");
       if (du) {
         const pid = du.dataset.deluser, name = profileCache?.name || "esta persona";
-        const reason = prompt(`¿Eliminar a ${name}?\n\nSe borran sus mensajes, sus amistades y su lugar en los grupos, y no podrá entrar. Queda en Configuración → Moderación → Eliminadas: podrás reactivarla con su perfil y su avance, pero los mensajes y amistades no vuelven.\n\nMotivo (opcional):`, "");
+        const reason = await askDialog({
+          title: `¿Eliminar a ${name}?`, tone: "danger", confirm: "Eliminar cuenta",
+          text: "Se borran sus mensajes, sus amistades y su lugar en los grupos, y no podrá entrar.\n\nQueda en Configuración → Moderación → Eliminadas: podrás reactivarla con su perfil y su avance, pero los mensajes y las amistades no vuelven.",
+          input: { label: "Motivo (opcional)", placeholder: "Ej.: cuenta duplicada, acoso…", maxlength: 120 },
+        });
         if (reason === null) return; // canceló
         du.disabled = true;
         const r = await api("POST", "/api/users/delete", { pid, reason }).catch(() => null);

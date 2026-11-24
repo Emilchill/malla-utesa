@@ -21,6 +21,7 @@
 
 import { openModal as openDialog, closeModal as closeDialog } from "./modal.js";
 import { auth } from "./firebase-config.js";
+import { askDialog } from "./dialog.js";
 
 const PORTAL_URL = "https://www.utesa.edu/home/index.php";
 const HASH_KEY = "utesa=";
@@ -352,7 +353,7 @@ async function verifyWithBookmark(pending, counts) {
     const res = await fetch("/api/utesa-verify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ pending, counts: counts ? { aprob: counts.aprob, insc: counts.insc, pend: counts.pend } : {} }), credentials: "omit", cache: "no-store" });
     const data = await res.json().catch(() => null);
     if (data && data.ok && data.verified && ctx.onVerified) ctx.onVerified(data.verified);
-    else if (data && data.message) alert("No se pudo verificar con el marcador: " + data.message);
+    else if (data && data.message) askDialog({ title: "No se pudo verificar con el marcador", text: data.message, alertOnly: true });
   } catch { /* la sincronización ya se aplicó; la verificación se puede reintentar */ }
 }
 
@@ -369,7 +370,7 @@ export function initUtesaImport(context) {
     bm.setAttribute("href", buildBookmarklet());
     bm.addEventListener("click", (e) => {
       e.preventDefault();
-      alert("Arrastra este botón a tu barra de marcadores (en el teléfono: guárdalo como marcador). Luego úsalo dentro del panel estudiantil de UTESA.");
+      askDialog({ title: "Guarda el marcador", icon: "info", alertOnly: true, confirm: "Entendido", text: "Arrastra este botón a tu barra de marcadores (en el teléfono: guárdalo como marcador).\n\nLuego ábrelo estando dentro del panel estudiantil de UTESA." });
     });
   }
 
