@@ -2,9 +2,13 @@
 
 ¡Gracias por ayudar! Este proyecto es de estudiantes para estudiantes. Esta guía te lleva de cero a tu primer Pull Request.
 
-## 0. Acceso al repositorio (para el dueño)
+## 0. Cómo entran los cambios
 
-El repo es privado y está en una cuenta personal. **Importante:** en cuentas personales GitHub NO tiene rol de solo lectura:
+Cualquiera puede proponer cambios: haz un **fork**, trabaja en una rama y abre un **Pull Request**. El dueño los revisa y hace el merge.
+
+### Colaboradores con escritura (para el dueño)
+
+El repo está en una cuenta personal. **Importante:** en cuentas personales GitHub NO tiene rol de solo lectura:
 todo colaborador invitado (Settings → Collaborators → Add people) recibe permiso de **escritura**. Eso significa que puede subir a
 `main` y publicar en producción, editar los workflows y usar el token de Cloudflare (y `main` no se puede proteger en repos privados
 gratuitos; ver `SECURITY.md`). Opciones:
@@ -12,14 +16,14 @@ gratuitos; ver `SECURITY.md`). Opciones:
 * **Solo amigos de confianza total**: invítalos como colaboradores y acuerden la regla "nunca push directo a `main`; todo por Pull Request".
 * **Más seguro (recomendado si crece el grupo)**: mover el repo a una *Organización* gratuita de GitHub, donde sí existe el rol **Read**.
   Los amigos hacen *fork* y Pull Requests; el dueño aprueba y hace el merge. Habría que reinstalar la app de Cloudflare en la organización y reconectar el proyecto de Pages.
-* Alternativa sin invitar a nadie: que te manden sus cambios como Pull Request desde un repo propio (si el repo fuera público) o como parche.
+* Sin invitar a nadie: que te manden sus cambios como Pull Request desde su fork (lo normal en un repo público).
 
 Los CI de un Pull Request desde fork pueden requerir que el dueño los apruebe en la pestaña *Actions*.
 
 ## 1. Preparar tu computador
 
 1. Instala **Git** y **Node.js 22.5 o superior** (recomendado 24). Mira `.nvmrc`.
-2. Pide acceso al repositorio (es **privado**) al dueño, @Emilchill, y acepta la invitación.
+2. Haz un **fork** del repositorio (botón *Fork* en GitHub) y clona tu fork.
 3. Clona y arranca:
 
 ```bash

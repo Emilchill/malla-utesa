@@ -7,6 +7,7 @@
   <img alt="Cloudflare Pages + Workers + D1" src="https://img.shields.io/badge/Cloudflare-Pages%20·%20Workers%20·%20D1-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
   <img alt="Sin dependencias" src="https://img.shields.io/badge/dependencias-0-2F6FB0?style=for-the-badge">
   <img alt="Pruebas" src="https://img.shields.io/badge/pruebas-420%2B%20en%20verde-1E7A44?style=for-the-badge">
+  <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-6D4BC2?style=for-the-badge"></a>
 </p>
 
 <p align="center">
@@ -143,5 +144,10 @@ Los datos de los pénsums se transcribieron de los documentos publicados por UTE
 inteligencia artificial, y se revisaron con comprobaciones automáticas. Pueden contener errores: **confirma siempre tu avance
 con tu coordinación de carrera**. Los errores se pueden reportar desde la propia app.
 
+## Licencia
+
+El código está bajo licencia **MIT** (ver [`LICENSE`](LICENSE)). La licencia no cubre el nombre ni las marcas de UTESA, ni el
+contenido de los pénsums, que pertenecen a la universidad.
+
 **Autor:** Emil Enmanuel Mercedes Francisco · Ingeniería en Sistemas Computacionales.
-Reportes y sugerencias: botón de contacto dentro de la app.
+Reportes y sugerencias: botón de contacto dentro de la app · Fallos de seguridad: **Security → Report a vulnerability**.

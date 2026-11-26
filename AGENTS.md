@@ -6,7 +6,7 @@ El proyecto, la interfaz y los comentarios están en **español**: mantén ese i
 ## 1. Qué es esto
 
 **Malla UTESA**: app web estudiantil (NO oficial de UTESA) para llevar la malla curricular y una comunidad (chat, amigos, grupos, logros).
-Producción: https://malla-utesa.pages.dev (Cloudflare Pages). El repositorio es **privado**.
+Producción: https://malla-utesa.pages.dev (Cloudflare Pages). Código bajo licencia MIT (ver `LICENSE`).
 
 ## 2. Stack (por qué no hay dependencias)
 
@@ -16,7 +16,7 @@ Producción: https://malla-utesa.pages.dev (Cloudflare Pages). El repositorio es
 * **Base de datos**: Cloudflare **D1** (SQLite), binding `DB`. El esquema se crea/migra solo (`ensureSchema` en el worker).
 * **Identidad**: **Firebase Auth** (Google o correo). El worker verifica el ID token (RS256) con las claves públicas de Google.
 * **Avisos en vivo del chat**: **Firestore** solo para "pings" (`chatPing/*`, `inbox/*`); los mensajes viven en D1.
-* **Respaldo antiguo**: Netlify (`legacy/netlify/`), no se usa.
+* **Respaldo antiguo**: Netlify, retirado (ya no está en el repositorio).
 
 ## 3. Comandos
 

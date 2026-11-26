@@ -4,7 +4,9 @@
   "private": true,
   "description": "Malla UTESA: proyecto estudiantil independiente (malla curricular, logros, chat y comunidad). No es oficial de UTESA.",
   "type": "module",
-  "engines": { "node": ">=22.5" },
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "test": "node tests/server.core.test.mjs && node tests/server.social.test.mjs && node tests/server.mod.test.mjs && node tests/moderation.test.mjs && node tests/utesa-import.test.mjs && node tests/headers.test.mjs && node tests/character.test.mjs && node tests/print-sheet.test.mjs",
     "build:data": "node tools/build-worker-data.mjs",
@@ -12,5 +14,6 @@
     "check:js": "node tools/check-js.mjs",
     "check:secrets": "node tools/check-secrets.mjs",
     "dev": "node tools/dev-server.mjs"
-  }
+  },
+  "license": "MIT"
 }

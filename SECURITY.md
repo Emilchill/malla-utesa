@@ -2,8 +2,9 @@
 
 ## Reportar un problema de seguridad
 
-**No abras un Issue público con detalles de una vulnerabilidad.** Escríbele directamente al dueño (WhatsApp +1 829 642 2334 o por mensaje privado
-en GitHub a @Emilchill) con: qué pasa, cómo reproducirlo y qué impacto tiene. Se responde lo antes posible.
+**No abras un Issue público con detalles de una vulnerabilidad.** Repórtala de forma privada desde la pestaña
+**Security → Report a vulnerability** de este repositorio (o con el botón de contacto dentro de la app), indicando qué pasa,
+cómo reproducirlo y qué impacto tiene. Se responde lo antes posible.
 
 ## Dónde están los secretos (y por qué NO están en este repositorio)
 
@@ -28,8 +29,8 @@ Recomendado en la consola de Google Cloud: restringir la API key a los dominios 
 
 * **Nunca** hagas commit de `.env`, tokens, claves privadas, volcados de base de datos ni datos reales de estudiantes (el `.gitignore` bloquea los más comunes).
 * Si se filtra un secreto: **revocarlo primero**, luego crear uno nuevo y actualizarlo donde se use. Borrar el commit no basta.
-* **`main` NO está protegido por GitHub**: en cuentas gratuitas GitHub no permite proteger ramas de repos privados (pide GitHub Pro).
-  Por eso la regla es **humana**: nadie hace push directo a `main`; todo entra por Pull Request con el CI en verde y la aprobación del dueño.
+* **Protege `main`** (Settings → Branches): en repos públicos GitHub lo permite gratis. Regla: Pull Request obligatorio con el check
+  `check-and-test` en verde y aprobación del dueño. Nadie hace push directo a `main`.
   Quien tenga permiso de **escritura** puede saltarse esa regla y publicar en producción, y también puede editar `.github/workflows/`
   (con Cloudflare conectado a GitHub, todo push a `main` se despliega). En una cuenta personal **todo colaborador invitado recibe escritura** (no existe rol *Read*), así que
   solo invita a gente de confianza total, o mueve el repo a una Organización gratuita para usar *Read* + fork + Pull Request

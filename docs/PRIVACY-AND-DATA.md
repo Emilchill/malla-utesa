@@ -29,7 +29,7 @@ El dueño del proyecto (quien administra Cloudflare) tiene acceso técnico a tod
 
 1. **(Mitigado 2026-11-18)** El inicio directo ya exige sesión de la app (token de Firebase) y limita a 10 intentos por hora por cuenta. Aún queda el riesgo de que una cuenta de la app se use para probar contraseñas de UTESA: el límite por matrícula e IP vive en la memoria del worker y se reinicia. *Mejora:* mover el límite a D1 o a una regla de Cloudflare (ver `ROADMAP.md`).
 2. **La contraseña pasa por nuestro servidor.** Viaja cifrada (HTTPS), pero exige confiar en el operador del proyecto y en Cloudflare.
-   El portal de UTESA, además, recibe la contraseña en la URL con un codificado trivial (así funciona su propio sitio) y puede registrarla.
+   Del lado de UTESA, la contraseña se envía al portal tal como lo hace su propio sitio web; la app no la guarda en ningún momento.
 3. **Verificación por marcador falsificable.** Un estudiante técnico podría fabricar una lista. Controles: carrera coincidente, contadores coherentes,
    avance que no retrocede, límite de intentos, y etiqueta visible "Verificado con marcador".
    **Mitigado 2026-11-18:** una lista **vacía** (declararse con la carrera 100 % terminada, incluso con contadores en 0) ya no se acepta por marcador; quien terminó la carrera verifica con matrícula (inicio directo). **Sigue siendo posible** que alguien con conocimientos técnicos fabrique una lista con pocas materias pendientes: no se puede evitar sin leer UTESA desde el servidor. Por eso la etiqueta «Verificado con marcador» se muestra siempre.

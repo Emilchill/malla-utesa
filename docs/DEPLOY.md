@@ -16,7 +16,7 @@ merge a main ──► Cloudflare Pages (conectado a este repo) ──► build 
 * **Configuración de build** (Cloudflare → malla-utesa → Settings → Build):
   * Comando de build: `sed -i -E "s/\?v=[0-9A-Za-z]+/?v=$(printf %.8s "$CF_PAGES_COMMIT_SHA")/g" app/*.html` (cache-busting automático:
     pone el commit en los `?v=` de los HTML). Ojo: el `sh` de Cloudflare **no** admite `${VAR:0:8}` (falla con "Bad substitution").
-  * Directorio de salida: `app` (solo esa carpeta sale a Internet; docs, pruebas, herramientas y `legacy/` no).
+  * Directorio de salida: `app` (solo esa carpeta sale a Internet; docs, pruebas y herramientas no).
   * Rama de producción: `main`.
 * El `app/_worker.js` de la carpeta de salida es el backend (Pages *advanced mode*): Cloudflare lo detecta solo.
 * **El CI (`.github/workflows/ci.yml`) ya NO decide el despliegue**: Cloudflare publica aunque el CI falle. Mira el check de GitHub antes de hacer merge.
@@ -25,9 +25,9 @@ merge a main ──► Cloudflare Pages (conectado a este repo) ──► build 
 
 | Recurso | Valor |
 |---|---|
-| Cuenta (Account ID) | `bf9294d055efdb106936a4302a9b18aa` |
+| Cuenta (Account ID) | en el panel de Cloudflare (no se publica aquí) |
 | Proyecto de Pages | `malla-utesa` → https://malla-utesa.pages.dev |
-| Base D1 | `malla-utesa-db` (id `59513f1e-26b2-4d9d-ab15-e42b1462381e`), binding **`DB`** |
+| Base D1 | `malla-utesa-db`, binding **`DB`** (el id está en el panel) |
 | Variable `ADMIN_EMAILS` | correo(s) del dueño, separados por coma (se aplica solo si Firebase confirma que el correo está verificado) |
 | Variable `ADMIN_UIDS` | opcional: uids de Firebase con rol de dueño |
 
@@ -76,6 +76,7 @@ Un proyecto de Pages creado por subida directa no se puede conectar a Git despu�
 5. Settings → Bindings → D1 `DB` → `malla-utesa-db`; vuelve a desplegar.
 6. Verifica: `curl -s https://malla-utesa.pages.dev/api/user -o /dev/null -w "%{http_code}"` → `401` (la API responde) y la página abre.
 
-## Respaldo en Netlify
+## Respaldo en Netlify (retirado)
 
-`legacy/netlify/` conserva el antiguo respaldo estático (sin `/api/user`). No se despliega desde aquí y no es necesario para producción.
+El antiguo respaldo en Netlify (`legacy/netlify/`) se quitó del repositorio el 2026-11-26: no se usaba en producción.
+Si aún existe un sitio en Netlify con ese código, bórralo desde el panel de Netlify.
