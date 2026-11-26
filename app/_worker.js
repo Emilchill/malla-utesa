@@ -94,8 +94,9 @@ const decode = (s) => s
   .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 const textOf = (html) => decode(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
 
+/** Tablas del HTML. Tolera <table> sin cerrar (el portal a veces omite </table>). */
 function tablesOf(html) {
-  return [...html.matchAll(/<table[\s\S]*?<\/table>/gi)].map(m => m[0]);
+  return html.split(/<table\b/i).slice(1).map(chunk => "<table" + chunk.split(/<\/table>/i)[0]);
 }
 function rowsOf(table) {
   return [...table.matchAll(/<tr[\s\S]*?<\/tr>/gi)].map(m =>
@@ -139,6 +140,13 @@ function parseCurrent(html) {
     for (const r of rows.slice(1)) {
       const m = String(r[ci] || "").toUpperCase().match(/([A-Z]{2,4})[-\s]?(\d{3})/);
       if (m) { const c = `${m[1]}-${m[2]}`; if (!out.includes(c)) out.push(c); }
+    }
+  }
+  if (!out.length) {
+    // Respaldo: claves con sección (INF-440-003) en el texto que sigue al encabezado.
+    const txt = textOf(html), at = txt.search(/C[óo]d\.?\s*Asig/i);
+    if (at !== -1) for (const m of txt.slice(at).matchAll(/\b([A-Z]{2,4})-(\d{3})-\d{2,3}\b/g)) {
+      const c = `${m[1]}-${m[2]}`; if (!out.includes(c)) out.push(c);
     }
   }
   return out.slice(0, 40);
