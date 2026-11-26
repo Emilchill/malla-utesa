@@ -359,7 +359,8 @@ function initQuickLogin() {
       const curLines = Array.isArray(data.current) ? data.current.map(code => "C\t" + code) : [];
       analyze(meta + (Array.isArray(data.current) ? `|CURSO=${data.current.length}` : "") + "\n" + [...(data.pending || []).map(code => "P\t" + code), ...curLines].join("\n"));
       if (!Array.isArray(data.current)) { // el portal no devolvió la tabla de inscritas: se avisa y no se toca lo marcado a mano
-        $("utesa-summary")?.insertAdjacentHTML("beforeend", '<br><span class="imp-warn">No pudimos leer tus <b>asignaturas inscritas</b> esta vez, así que tus materias en curso no cambian. Puedes marcarlas a mano tocando cada materia, o usar el marcador.</span>');
+        const diag = data.currentDiag ? `<br><span class="muted">Detalle para soporte: ${esc(data.currentStatus || "")} · «${esc(String(data.currentDiag).slice(0, 140))}»</span>` : "";
+        $("utesa-summary")?.insertAdjacentHTML("beforeend", `<br><span class="imp-warn">No pudimos leer tus <b>asignaturas inscritas</b> esta vez, así que tus materias en curso no cambian. Puedes marcarlas a mano tocando cada materia, o usar el marcador.</span>${diag}`);
       }
       mat.value = "";
     } catch {

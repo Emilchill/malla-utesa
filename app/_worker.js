@@ -190,6 +190,13 @@ async function login(request, env) {
     await get(`${BASE}conexion.aspx?Ematri=${encodeURIComponent(matricula)}&Ec=${ec}&Erecinto=${recinto}`, jar);
     ec = "";
 
+    // Igual que el navegador al entrar: el Tablero (index.aspx) y lo que este carga aparte. Sin esto, algunas
+    // secciones (p. ej. Asignaturas inscritas) responden sin su tabla. Comprobado contra el portal real (2026-11-26).
+    let resuTab = null;
+    for (const p of ["index.aspx", "barra-verde.aspx", "menu.aspx", "resumen.aspx", "RevisaContrasena.aspx"]) {
+      try { const r = await get(`${BASE}${p}`, jar); if (p === "resumen.aspx") resuTab = r; } catch { /* preparación, no crítica */ }
+    }
+
     const pend = await get(`${BASE}asignaturas-pendientes.aspx`, jar);
     const pending = pend.status === 200 ? parsePending(pend.html) : null;
     if (!pending) {
@@ -199,18 +206,17 @@ async function login(request, env) {
 
     let counts = { aprob: null, insc: null, pend: null };
     try {
-      const resu = await get(`${BASE}resumen.aspx`, jar);
+      const resu = resuTab && resuTab.status === 200 ? resuTab : await get(`${BASE}resumen.aspx`, jar);
       const n = (id) => { const v = parseInt(inputValue(resu.html, id), 10); return Number.isNaN(v) ? null : v; };
       counts = { aprob: n("txtCanAprob"), insc: n("txtCanInscri"), pend: n("txtCanPens") };
     } catch { /* los contadores son opcionales */ }
 
     // materias en curso (página Asignaturas inscritas): opcional, si falla se vincula igual.
-    // Se imita al navegador: el marco (pagina-asignaturas-inscritas.aspx) y lo que ese marco carga aparte
-    // (barra-verde.aspx y menu.aspx, que preparan la sesión) y por último la tabla.
     // current = null significa «no se sabe»: así nunca se borran las materias que la persona marcó a mano.
-    let current = null, currentStatus = "error";
+    // currentDiag: la frase que devolvió el portal cuando no hay tabla (p. ej. «La sesión ha vencido»), sin claves ni notas.
+    let current = null, currentStatus = "error", currentDiag = null;
     try {
-      for (const p of ["pagina-asignaturas-inscritas.aspx", "barra-verde.aspx", "menu.aspx"]) { try { await get(`${BASE}${p}`, jar); } catch { /* preparación, no crítica */ } }
+      try { await get(`${BASE}pagina-asignaturas-inscritas.aspx`, jar); } catch { /* marco: preparación, no crítica */ }
       const ins = await get(`${BASE}asignaturas-inscritas.aspx`, jar);
       const txt = ins.status === 200 ? textOf(ins.html) : "";
       if (/sesi[óo]n ha vencido/i.test(txt)) currentStatus = "sesion";
@@ -218,7 +224,8 @@ async function login(request, env) {
         const found = parseCurrent(ins.html);
         if (found.length) { current = found; currentStatus = "ok"; } else currentStatus = "vacia"; // tabla sin filas: no se toma como «0 materias»
       } else currentStatus = "sin-tabla";
-    } catch { /* opcional */ }
+      if (currentStatus !== "ok") currentDiag = txt.replace(/\.[\w-]+\s*\{[^}]*\}/g, " ").replace(/[A-Z]{2,4}-?\d{3}(-\d{3})?/g, "…").replace(/\d+(\.\d+)?/g, "#").replace(/\s+/g, " ").trim().slice(0, 140) || `respuesta ${ins.status}`;
+    } catch { currentDiag = "sin respuesta del portal"; }
 
     // Logros: solo con inicio de sesión directo y sesión de Firebase válida
     let verified = null;
@@ -253,6 +260,7 @@ async function login(request, env) {
       pending,
       current,
       currentStatus,
+      currentDiag,
       verified,
     });
   } catch (e) {
