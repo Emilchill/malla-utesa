@@ -1,87 +1,118 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 560" width="980" height="560" role="img" aria-label="Arquitectura">
-<title>Arquitectura</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 600" width="1280" height="600" role="img" aria-label="Una app estática, una API y una base de datos">
+<title>Una app estática, una API y una base de datos</title>
 <defs>
-  <filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0b2a17" flood-opacity=".12"/></filter>
-  <marker id="ar-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#00542B"/></marker><marker id="ar-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#C89B3C"/></marker><marker id="ar-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#2F6FB0"/></marker><marker id="ar-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#6B7568"/></marker><marker id="ar-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#C7402C"/></marker><marker id="ar-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#6D4BC2"/></marker><marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#17211A"/></marker>
-  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#DCE3D8"/></pattern>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1020"/><stop offset=".55" stop-color="#19123F"/><stop offset="1" stop-color="#07293A"/></linearGradient>
+  <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9B82FF"/><stop offset=".5" stop-color="#6FA8FF"/><stop offset="1" stop-color="#35D6EA"/></linearGradient>
+  <radialGradient id="glow1" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7C5CFF" stop-opacity=".40"/><stop offset="1" stop-color="#7C5CFF" stop-opacity="0"/></radialGradient><radialGradient id="glow2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#22C8E6" stop-opacity=".28"/><stop offset="1" stop-color="#22C8E6" stop-opacity="0"/></radialGradient>
+  <radialGradient id="halo-green" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#3DDC97" stop-opacity=".55"/><stop offset="1" stop-color="#3DDC97" stop-opacity="0"/></radialGradient><radialGradient id="halo-gold" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#F2C26B" stop-opacity=".55"/><stop offset="1" stop-color="#F2C26B" stop-opacity="0"/></radialGradient><radialGradient id="halo-blue" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#6FA8FF" stop-opacity=".55"/><stop offset="1" stop-color="#6FA8FF" stop-opacity="0"/></radialGradient><radialGradient id="halo-red" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FF7A8A" stop-opacity=".55"/><stop offset="1" stop-color="#FF7A8A" stop-opacity="0"/></radialGradient><radialGradient id="halo-violet" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#A18BFF" stop-opacity=".55"/><stop offset="1" stop-color="#A18BFF" stop-opacity="0"/></radialGradient><radialGradient id="halo-cyan" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#35D6EA" stop-opacity=".55"/><stop offset="1" stop-color="#35D6EA" stop-opacity="0"/></radialGradient><radialGradient id="halo-gray" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#8E9AC0" stop-opacity=".55"/><stop offset="1" stop-color="#8E9AC0" stop-opacity="0"/></radialGradient>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#fff" stroke-opacity=".045"/></pattern>
+  <filter id="blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+  <clipPath id="card"><rect width="1280" height="600" rx="26"/></clipPath>
 </defs>
-<rect x="1" y="1" width="978" height="558" rx="18" fill="#F7F9F6" stroke="#DDE3DA" stroke-width="1.5"/>
-<rect x="1" y="1" width="978" height="558" rx="18" fill="url(#dots)" opacity=".7"/>
-<rect x="0" y="0" width="980" height="6" rx="3" fill="#00542B"/>
-<text x="28" y="44" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="21" font-weight="700" fill="#17211A">Arquitectura</text>
-<text x="28" y="66" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#6B7568">Cómo se conectan las piezas · los puntos muestran el flujo de datos</text>
+<style>
+  text { font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif }
+  .flow { fill: none; stroke: url(#ink); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 6 22; opacity: .22; animation: run 12s linear infinite }
+  .flow.b { animation-duration: 17s; opacity: .14 }
+  .lnk { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 2 14; animation: run 3.2s linear infinite }
+  .lnk.slow { animation-duration: 5s }
+  @keyframes run { to { stroke-dashoffset: -560 } }
+  @media (prefers-reduced-motion: reduce) { .flow, .lnk { animation: none } }
+</style>
+<g clip-path="url(#card)">
+  <rect width="1280" height="600" fill="url(#bg)"/>
+  <circle cx="128" cy="570" r="409.6" fill="url(#glow1)"/>
+  <circle cx="1177.6000000000001" cy="36" r="409.6" fill="url(#glow2)"/>
+  <rect width="1280" height="600" fill="url(#grid)"/>
+  <path class="flow" d="M-20 120C256 24 448 228 716.8000000000001 132S1126.4 30 1300 144"/>
+  <path class="flow b" d="M-20 528C243.2 612 473.6 408.00000000000006 716.8000000000001 480S1088 612 1300 480"/>
+</g>
+<rect x=".75" y=".75" width="1278.5" height="598.5" rx="26" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="1.5"/>
+<text x="44" y="56" font-size="12.5" font-weight="700" letter-spacing=".16em" fill="#35D6EA" opacity=".9">ARQUITECTURA</text>
+<text x="44" y="88" font-size="27" font-weight="800" fill="#F3F6FF">Una app estática, una API y una base de datos</text>
 
-  <rect x="250" y="92" width="410" height="400" rx="16" fill="#FFFFFF" fill-opacity=".55" stroke="#C89B3C" stroke-width="1.6" stroke-dasharray="7 6"/>
-  <text x="455" y="482" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#C89B3C" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">Cloudflare · plan gratuito</text>
-  <g filter="url(#sh)">
-  <rect x="32" y="228" width="180" height="120" rx="12" fill="#FFFFFF" stroke="#17211A" stroke-width="2"/>
-  <path d="M32 240 a12 12 0 0 1 12 -12 h156 a12 12 0 0 1 12 12 v34 h-180z" fill="#EEF1EC"/>
-  <line x1="32" y1="274" x2="212" y2="274" stroke="#17211A" stroke-width="1.2" opacity=".45"/>
-  <text x="122" y="246" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#17211A" opacity=".9">«actor»</text>
-  <text x="122" y="264" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" fill="#17211A">Estudiante</text>
-  <text x="44" y="294" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Navegador o teléfono</text><text x="44" y="311" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Marcador (opcional)</text>
-</g>
-  <g filter="url(#sh)">
-  <rect x="280" y="130" width="350" height="100" rx="12" fill="#FFFFFF" stroke="#00542B" stroke-width="2"/>
-  <path d="M280 142 a12 12 0 0 1 12 -12 h326 a12 12 0 0 1 12 12 v34 h-350z" fill="#E3EFE6"/>
-  <line x1="280" y1="176" x2="630" y2="176" stroke="#00542B" stroke-width="1.2" opacity=".45"/>
-  <text x="455" y="148" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#00542B" opacity=".9">«componente»</text>
-  <text x="455" y="166" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" fill="#17211A">Cloudflare Pages</text>
-  <text x="292" y="196" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Sitio estático: HTML, CSS y JS (app/)</text><text x="292" y="213" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Sin build · cache-busting por commit</text>
-</g>
-  <g filter="url(#sh)">
-  <rect x="280" y="300" width="175" height="150" rx="12" fill="#FFFFFF" stroke="#00542B" stroke-width="2"/>
-  <path d="M280 312 a12 12 0 0 1 12 -12 h151 a12 12 0 0 1 12 12 v34 h-175z" fill="#E3EFE6"/>
-  <line x1="280" y1="346" x2="455" y2="346" stroke="#00542B" stroke-width="1.2" opacity=".45"/>
-  <text x="367.5" y="318" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#00542B" opacity=".9">«componente»</text>
-  <text x="367.5" y="336" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" fill="#17211A">Worker /api</text>
-  <text x="292" y="366" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Verifica el token</text><text x="292" y="383" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Permisos y límites</text><text x="292" y="400" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Moderación</text><text x="292" y="417" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Vinculación UTESA</text>
-</g>
-  <g filter="url(#sh)">
-  <rect x="480" y="300" width="150" height="150" rx="12" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2"/>
-  <path d="M480 312 a12 12 0 0 1 12 -12 h126 a12 12 0 0 1 12 12 v34 h-150z" fill="#E4EEF9"/>
-  <line x1="480" y1="346" x2="630" y2="346" stroke="#2F6FB0" stroke-width="1.2" opacity=".45"/>
-  <text x="555" y="318" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#2F6FB0" opacity=".9">«base de datos»</text>
-  <text x="555" y="336" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" fill="#17211A">D1 (SQLite)</text>
-  <text x="492" y="366" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Perfiles y avance</text><text x="492" y="383" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Chat y amistades</text><text x="492" y="400" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Suspensiones</text><text x="492" y="417" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Registro</text>
-</g>
-  <g filter="url(#sh)">
-  <rect x="712" y="120" width="240" height="120" rx="12" fill="#FFFFFF" stroke="#6D4BC2" stroke-width="2"/>
-  <path d="M712 132 a12 12 0 0 1 12 -12 h216 a12 12 0 0 1 12 12 v34 h-240z" fill="#EEE8FA"/>
-  <line x1="712" y1="166" x2="952" y2="166" stroke="#6D4BC2" stroke-width="1.2" opacity=".45"/>
-  <text x="832" y="138" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#6D4BC2" opacity=".9">«servicio externo»</text>
-  <text x="832" y="156" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" fill="#17211A">Firebase</text>
-  <text x="724" y="186" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Auth: inicio de sesión</text><text x="724" y="203" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Firestore: avisos en vivo</text><text x="724" y="220" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">(sin contenido de mensajes)</text>
-</g>
-  <g filter="url(#sh)">
-  <rect x="712" y="318" width="240" height="130" rx="12" fill="#FFFFFF" stroke="#C7402C" stroke-width="2" stroke-dasharray="6 5"/>
-  <path d="M712 330 a12 12 0 0 1 12 -12 h216 a12 12 0 0 1 12 12 v34 h-240z" fill="#FBE7E3"/>
-  <line x1="712" y1="364" x2="952" y2="364" stroke="#C7402C" stroke-width="1.2" opacity=".45"/>
-  <text x="832" y="336" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#C7402C" opacity=".9">«sistema externo»</text>
-  <text x="832" y="354" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" fill="#17211A">Portal de UTESA</text>
-  <text x="724" y="384" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">Solo lectura:</text><text x="724" y="401" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">pendientes · inscritas</text><text x="724" y="418" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12.5" fill="#17211A" opacity=".85">resumen (contadores)</text>
-</g>
-
-  <path id="p1" d="M212 262 C 245 230, 250 190, 280 182" fill="none" stroke="#00542B" stroke-width="2.2" marker-end="url(#ar-green)"/>
-  <path id="p2" d="M212 300 C 240 320, 250 370, 280 372" fill="none" stroke="#00542B" stroke-width="2.2" marker-end="url(#ar-green)"/>
-  <path d="M455 375 L480 375" fill="none" stroke="#2F6FB0" stroke-width="2.2" marker-end="url(#ar-blue)" marker-start="url(#ar-blue)"/>
-  <path d="M122 228 C 140 120, 520 70, 712 160" fill="none" stroke="#6D4BC2" stroke-width="2" marker-end="url(#ar-violet)"/>
-  <path d="M455 330 C 560 260, 620 230, 712 214" fill="none" stroke="#6D4BC2" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ar-violet)"/>
-  <path d="M630 420 C 670 420, 680 400, 712 392" fill="none" stroke="#C7402C" stroke-width="2.2" marker-end="url(#ar-red)"/>
-  <path d="M122 348 C 160 520, 640 540, 800 448" fill="none" stroke="#C7402C" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ar-red)"/>
-
-  <text x="122" y="216" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#00542B" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">1 · carga la app</text>
-  <text x="122" y="368" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#00542B" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">2 · API con token</text>
-  <text x="470" y="104" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6D4BC2" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">inicio de sesión · token</text>
-  <text x="612" y="262" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#6D4BC2" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">verifica la firma</text>
-  <text x="668" y="438" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#C7402C" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">inicio directo</text>
-  <text x="450" y="528" text-anchor="middle" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#C7402C" paint-order="stroke" stroke="#F7F9F6" stroke-width="4" stroke-linejoin="round">marcador: corre en el navegador del estudiante</text>
-
-  <circle r="5" fill="#00542B" opacity="0"><animateMotion dur="3s" begin="0s" repeatCount="indefinite" path="M212 262 C 245 230, 250 190, 280 182"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="3s" begin="0s" repeatCount="indefinite"/></circle>
-  <circle r="5" fill="#00542B" opacity="0"><animateMotion dur="3s" begin="0.8s" repeatCount="indefinite" path="M212 300 C 240 320, 250 370, 280 372"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="3s" begin="0.8s" repeatCount="indefinite"/></circle>
-  <circle r="4" fill="#2F6FB0" opacity="0"><animateMotion dur="1.2s" begin="0.3s" repeatCount="indefinite" path="M455 375 L480 375"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="1.2s" begin="0.3s" repeatCount="indefinite"/></circle>
-  <circle r="5" fill="#6D4BC2" opacity="0"><animateMotion dur="4s" begin="0.4s" repeatCount="indefinite" path="M122 228 C 140 120, 520 70, 712 160"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="4s" begin="0.4s" repeatCount="indefinite"/></circle>
-  <circle r="5" fill="#C7402C" opacity="0"><animateMotion dur="2.4s" begin="1.2s" repeatCount="indefinite" path="M630 420 C 670 420, 680 400, 712 392"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="2.4s" begin="1.2s" repeatCount="indefinite"/></circle>
-  <circle r="5" fill="#C7402C" opacity="0"><animateMotion dur="4.5s" begin="2s" repeatCount="indefinite" path="M122 348 C 160 520, 640 540, 800 448"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="4.5s" begin="2s" repeatCount="indefinite"/></circle>
+  <rect x="345" y="248" width="745" height="190" rx="34" fill="#F38020" fill-opacity=".05" stroke="#F38020" stroke-opacity=".28" stroke-dasharray="4 8"/>
+  <g><rect x="921.5" y="424" width="157.1" height="28" rx="14" fill="#12163A" fill-opacity=".92" stroke="#F6A55A" stroke-opacity=".45"/>
   
+  <text x="1000.0" y="442.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#F6A55A">Cloudflare · gratis</text></g>
+  <path d="M190 330 L400 330" fill="none" stroke="#35D6EA" stroke-opacity=".2" stroke-width="2"/>
+  <path class="lnk" d="M190 330 L400 330" stroke="#35D6EA" stroke-opacity="0.9"/><path d="M480 330 L680 330" fill="none" stroke="#6FA8FF" stroke-opacity=".2" stroke-width="2"/>
+  <path class="lnk" d="M480 330 L680 330" stroke="#6FA8FF" stroke-opacity="0.9"/><path d="M760 330 L960 330" fill="none" stroke="#3DDC97" stroke-opacity=".2" stroke-width="2"/>
+  <path class="lnk" d="M760 330 L960 330" stroke="#3DDC97" stroke-opacity="0.9"/>
+  <path d="M150 290 C 150 190, 520 96, 686 168" fill="none" stroke="#A18BFF" stroke-opacity=".2" stroke-width="2"/>
+  <path class="lnk slow" d="M150 290 C 150 190, 520 96, 686 168" stroke="#A18BFF" stroke-opacity="0.9"/><path d="M720 290 L720 202" fill="none" stroke="#A18BFF" stroke-opacity=".2" stroke-width="2" stroke-dasharray="5 7"/>
+  <path class="lnk slow" d="M720 290 L720 202" stroke="#A18BFF" stroke-opacity="0.6"/><path d="M440 290 L440 202" fill="none" stroke="#A18BFF" stroke-opacity=".2" stroke-width="2" stroke-dasharray="5 7"/>
+  <path class="lnk slow" d="M440 290 L440 202" stroke="#A18BFF" stroke-opacity="0.6"/>
+  <path d="M748 358 C 820 470, 960 500, 1094 500" fill="none" stroke="#FF7A8A" stroke-opacity=".2" stroke-width="2"/>
+  <path class="lnk" d="M748 358 C 820 470, 960 500, 1094 500" stroke="#FF7A8A" stroke-opacity="0.9"/><path d="M150 370 C 200 570, 900 585, 1104 526" fill="none" stroke="#FF7A8A" stroke-opacity=".2" stroke-width="2" stroke-dasharray="5 7"/>
+  <path class="lnk slow" d="M150 370 C 200 570, 900 585, 1104 526" stroke="#FF7A8A" stroke-opacity="0.6"/>
+  <g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.88;1" dur="2.4s" begin="0s" repeatCount="indefinite"/>
+  <circle r="10.799999999999999" fill="#35D6EA" opacity=".45" filter="url(#blur)"><animateMotion dur="2.4s" begin="0s" repeatCount="indefinite" path="M190 330 L400 330"/></circle>
+  <circle r="4.5" fill="#fff"><animateMotion dur="2.4s" begin="0s" repeatCount="indefinite" path="M190 330 L400 330"/></circle></g><g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.88;1" dur="2.4s" begin="0.8s" repeatCount="indefinite"/>
+  <circle r="10.799999999999999" fill="#6FA8FF" opacity=".45" filter="url(#blur)"><animateMotion dur="2.4s" begin="0.8s" repeatCount="indefinite" path="M480 330 L680 330"/></circle>
+  <circle r="4.5" fill="#fff"><animateMotion dur="2.4s" begin="0.8s" repeatCount="indefinite" path="M480 330 L680 330"/></circle></g><g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.88;1" dur="2.4s" begin="1.6s" repeatCount="indefinite"/>
+  <circle r="10.799999999999999" fill="#3DDC97" opacity=".45" filter="url(#blur)"><animateMotion dur="2.4s" begin="1.6s" repeatCount="indefinite" path="M760 330 L960 330"/></circle>
+  <circle r="4.5" fill="#fff"><animateMotion dur="2.4s" begin="1.6s" repeatCount="indefinite" path="M760 330 L960 330"/></circle></g><g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.88;1" dur="3.2s" begin="2.2s" repeatCount="indefinite"/>
+  <circle r="10.799999999999999" fill="#FF7A8A" opacity=".45" filter="url(#blur)"><animateMotion dur="3.2s" begin="2.2s" repeatCount="indefinite" path="M748 358 C 820 470, 960 500, 1094 500"/></circle>
+  <circle r="4.5" fill="#fff"><animateMotion dur="3.2s" begin="2.2s" repeatCount="indefinite" path="M748 358 C 820 470, 960 500, 1094 500"/></circle></g><g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.88;1" dur="3.6s" begin="0.4s" repeatCount="indefinite"/>
+  <circle r="10.799999999999999" fill="#A18BFF" opacity=".45" filter="url(#blur)"><animateMotion dur="3.6s" begin="0.4s" repeatCount="indefinite" path="M150 290 C 150 190, 520 96, 686 168"/></circle>
+  <circle r="4.5" fill="#fff"><animateMotion dur="3.6s" begin="0.4s" repeatCount="indefinite" path="M150 290 C 150 190, 520 96, 686 168"/></circle></g>
+  <g>
+  <circle cx="150" cy="330" r="76" fill="url(#halo-cyan)" opacity=".5"></circle>
+  <circle cx="150" cy="330" r="38" fill="#12163A" stroke="#35D6EA" stroke-opacity=".75" stroke-width="1.8"/>
+  <circle cx="150" cy="330" r="32" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(132.9 312.9) scale(1.425)" fill="none" stroke="#35D6EA" stroke-width="1.12" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></g>
+  <text x="150" y="398" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F3F6FF">Estudiante</text>
+  <text x="150" y="420" text-anchor="middle" font-size="13" fill="#B4BFE3">navegador o teléfono</text>
+</g>
+  <g>
+  <circle cx="440" cy="330" r="76" fill="url(#halo-blue)" opacity=".5"></circle>
+  <circle cx="440" cy="330" r="38" fill="#12163A" stroke="#6FA8FF" stroke-opacity=".75" stroke-width="1.8"/>
+  <circle cx="440" cy="330" r="32" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(422.9 312.9) scale(1.425)" fill="none" stroke="#6FA8FF" stroke-width="1.12" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6"/><circle cx="9" cy="6.5" r=".6"/><path d="M8 14h8M8 17h5"/></g>
+  <text x="440" y="398" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F3F6FF">App</text>
+  <text x="440" y="420" text-anchor="middle" font-size="13" fill="#B4BFE3">Pages · sitio estático</text>
+</g>
+  <g>
+  <circle cx="720" cy="330" r="76" fill="url(#halo-blue)" opacity=".5"></circle>
+  <circle cx="720" cy="330" r="38" fill="#12163A" stroke="#6FA8FF" stroke-opacity=".75" stroke-width="1.8"/>
+  <circle cx="720" cy="330" r="32" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(702.9 312.9) scale(1.425)" fill="none" stroke="#6FA8FF" stroke-width="1.12" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="7" rx="2"/><rect x="4" y="13.5" width="16" height="7" rx="2"/><path d="M8 7h.01M8 17h.01M12 7h5M12 17h5"/></g>
+  <text x="720" y="398" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F3F6FF">API</text>
+  <text x="720" y="420" text-anchor="middle" font-size="13" fill="#B4BFE3">Worker · reglas y permisos</text>
+</g>
+  <g>
+  <circle cx="1000" cy="330" r="76" fill="url(#halo-green)" opacity=".5"></circle>
+  <circle cx="1000" cy="330" r="38" fill="#12163A" stroke="#3DDC97" stroke-opacity=".75" stroke-width="1.8"/>
+  <circle cx="1000" cy="330" r="32" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(982.9 312.9) scale(1.425)" fill="none" stroke="#3DDC97" stroke-width="1.12" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8v-13"/><path d="M4.5 12c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8"/></g>
+  <text x="1000" y="398" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F3F6FF">Datos</text>
+  <text x="1000" y="420" text-anchor="middle" font-size="13" fill="#B4BFE3">D1 · SQLite</text>
+</g>
+  <g>
+  <circle cx="720" cy="168" r="64" fill="url(#halo-violet)" opacity=".5"></circle>
+  <circle cx="720" cy="168" r="32" fill="#12163A" stroke="#A18BFF" stroke-opacity=".75" stroke-width="1.8"/>
+  <circle cx="720" cy="168" r="26" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(705.6 153.6) scale(1.200)" fill="none" stroke="#A18BFF" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.2"/><path d="M11 12 20 3M16.5 6.5l3 3M14 9l2 2"/></g>
+  <text x="720" y="230" text-anchor="middle" font-size="14.5" font-weight="700" fill="#F3F6FF">Identidad</text>
+  <text x="720" y="249" text-anchor="middle" font-size="12" fill="#B4BFE3">Firebase Auth</text>
+</g>
+  <g>
+  <circle cx="440" cy="168" r="64" fill="url(#halo-violet)" opacity=".5"></circle>
+  <circle cx="440" cy="168" r="32" fill="#12163A" stroke="#A18BFF" stroke-opacity=".75" stroke-width="1.8"/>
+  <circle cx="440" cy="168" r="26" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(425.6 153.6) scale(1.200)" fill="none" stroke="#A18BFF" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></g>
+  <text x="440" y="230" text-anchor="middle" font-size="14.5" font-weight="700" fill="#F3F6FF">Avisos en vivo</text>
+  <text x="440" y="249" text-anchor="middle" font-size="12" fill="#B4BFE3">solo «hay algo nuevo»</text>
+</g>
+  <g>
+  <circle cx="1130" cy="500" r="68" fill="url(#halo-red)" opacity=".5"></circle>
+  <circle cx="1130" cy="500" r="34" fill="#12163A" stroke="#FF7A8A" stroke-opacity=".75" stroke-width="1.8" stroke-dasharray="5 5"/>
+  <circle cx="1130" cy="500" r="28" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(1114.7 484.7) scale(1.275)" fill="none" stroke="#FF7A8A" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5M5 10.5V20M19 10.5V20M9.5 20v-5h5v5M3 20h18"/></g>
+  <text x="1130" y="564" text-anchor="middle" font-size="14.5" font-weight="700" fill="#F3F6FF">Portal UTESA</text>
+  <text x="1130" y="583" text-anchor="middle" font-size="12" fill="#B4BFE3">solo lectura</text>
+</g>
+  <g><rect x="440.1" y="546" width="239.9" height="28" rx="14" fill="#12163A" fill-opacity=".92" stroke="#FF7A8A" stroke-opacity=".45"/>
+  
+  <text x="560.0" y="564.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#FF7A8A">marcador: corre en tu navegador</text></g>
 </svg>

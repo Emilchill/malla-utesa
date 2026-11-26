@@ -35,7 +35,7 @@ con un clic, y alrededor hay una comunidad moderada para estudiar juntos.
 
 ## Cómo funciona
 
-> Los diagramas son SVG animados en bucle (se generan con `node tools/build-diagrams.mjs`).
+> Diagramas conceptuales animados en bucle (SVG, se generan con `node tools/build-diagrams.mjs`).
 
 ### Arquitectura
 

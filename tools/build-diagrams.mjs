@@ -1,7 +1,8 @@
-// tools/build-diagrams.mjs — genera los diagramas animados (SVG en bucle) de docs/img/.
+// tools/build-diagrams.mjs — genera los diagramas animados de docs/img/ (SVG en bucle).
 //   node tools/build-diagrams.mjs
-// Son SVG con animaciones SMIL: se ven como un GIF en bucle, pero nítidos a cualquier tamaño y livianos.
-// GitHub los muestra animados dentro del README. No usan fuentes externas ni imágenes.
+// Estilo: fondo nocturno con brillos y cuadrícula tenue, nodos con ícono dentro de círculos de vidrio, conexiones curvas
+// con trazos que fluyen y pulsos de luz. Poco texto: cada diagrama cuenta una idea. Las animaciones (SMIL + CSS) se ven
+// como un GIF en bucle, pero el archivo es nítido a cualquier tamaño y pesa pocos KB. GitHub las muestra en el README.
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,266 +10,289 @@ import { fileURLToPath } from "node:url";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "img");
 mkdirSync(OUT, { recursive: true });
 
-/* ---------- estilo común ---------- */
+/* ---------- paleta (colores claros sobre fondo oscuro, contrastes sutiles) ---------- */
 const C = {
-  green: "#00542B", greenSoft: "#E3EFE6", gold: "#C89B3C", goldSoft: "#FBF2DC", blue: "#2F6FB0", blueSoft: "#E4EEF9",
-  red: "#C7402C", redSoft: "#FBE7E3", gray: "#6B7568", graySoft: "#EEF1EC", ink: "#17211A", line: "#C9D2C6", bg: "#F7F9F6", card: "#FFFFFF",
-  violet: "#6D4BC2", violetSoft: "#EEE8FA",
+  green: "#3DDC97", gold: "#F2C26B", blue: "#6FA8FF", red: "#FF7A8A", violet: "#A18BFF", cyan: "#35D6EA",
+  gray: "#8E9AC0", ink: "#F3F6FF", sub: "#B4BFE3", panel: "#12163A",
 };
-const FONT = `'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif`;
-const MONO = `'JetBrains Mono', 'Consolas', 'Menlo', monospace`;
+const FONT = `ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-function frame(w, h, title, subtitle, body) {
+/* ---------- íconos (trazos sobre una cuadrícula de 24) ---------- */
+const ICON = {
+  user: `<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/>`,
+  browser: `<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6"/><circle cx="9" cy="6.5" r=".6"/><path d="M8 14h8M8 17h5"/>`,
+  server: `<rect x="4" y="3.5" width="16" height="7" rx="2"/><rect x="4" y="13.5" width="16" height="7" rx="2"/><path d="M8 7h.01M8 17h.01M12 7h5M12 17h5"/>`,
+  db: `<ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8v-13"/><path d="M4.5 12c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8"/>`,
+  key: `<circle cx="8" cy="15" r="4.2"/><path d="M11 12 20 3M16.5 6.5l3 3M14 9l2 2"/>`,
+  bolt: `<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>`,
+  building: `<path d="M3 10.5 12 4l9 6.5M5 10.5V20M19 10.5V20M9.5 20v-5h5v5M3 20h18"/>`,
+  list: `<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>`,
+  play: `<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/>`,
+  chart: `<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>`,
+  check: `<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/>`,
+  lock: `<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>`,
+  unlock: `<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 7.7-1.5"/>`,
+  chat: `<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>`,
+  flag: `<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>`,
+  users: `<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.5c1.9.8 3 2.7 3 5.5"/>`,
+  group: `<circle cx="12" cy="7" r="3"/><circle cx="5" cy="11" r="2.4"/><circle cx="19" cy="11" r="2.4"/><path d="M7 20c0-3 2.2-5 5-5s5 2 5 5M1.5 19c0-2.2 1.4-3.6 3.5-3.6M22.5 19c0-2.2-1.4-3.6-3.5-3.6"/>`,
+  clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>`,
+  shield: `<path d="M12 3 20 6v6c0 4.8-3.4 8-8 9-4.6-1-8-4.2-8-9V6z"/><path d="M9 12l2 2 4-4"/>`,
+  eyeoff: `<path d="M3 3l18 18M10.6 6.2A9.6 9.6 0 0 1 12 6c5 0 9 6 9 6a15 15 0 0 1-3 3.6M6.4 7.6C4.3 9.2 3 12 3 12s4 6 9 6c1.6 0 3-.4 4.3-1"/><path d="M9.9 10a3 3 0 0 0 4.1 4.1"/>`,
+  refresh: `<path d="M20 11a8 8 0 0 0-14.6-4.4L3 9M3 4v5h5M4 13a8 8 0 0 0 14.6 4.4L21 15M21 20v-5h-5"/>`,
+  trash: `<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/>`,
+  archive: `<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10.5h14V9M10 13h4"/>`,
+  id: `<rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="2.4"/><path d="M5.8 16.2c.6-1.7 1.8-2.6 3.2-2.6s2.6.9 3.2 2.6M14.5 10h4M14.5 13.5h3"/>`,
+};
+
+/* ---------- piezas comunes ---------- */
+function backdrop(w, h, rx = 26) {
+  const glow = (id, col, op) => `<radialGradient id="${id}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${col}" stop-opacity="${op}"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient>`;
+  return `<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1020"/><stop offset=".55" stop-color="#19123F"/><stop offset="1" stop-color="#07293A"/></linearGradient>
+  <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9B82FF"/><stop offset=".5" stop-color="#6FA8FF"/><stop offset="1" stop-color="#35D6EA"/></linearGradient>
+  ${glow("glow1", "#7C5CFF", ".40")}${glow("glow2", "#22C8E6", ".28")}
+  ${Object.entries(C).filter(([k]) => !["ink", "sub", "panel"].includes(k)).map(([k, v]) => glow(`halo-${k}`, v, ".55")).join("")}
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#fff" stroke-opacity=".045"/></pattern>
+  <filter id="blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+  <clipPath id="card"><rect width="${w}" height="${h}" rx="${rx}"/></clipPath>
+</defs>
+<style>
+  text { font-family: ${FONT} }
+  .flow { fill: none; stroke: url(#ink); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 6 22; opacity: .22; animation: run 12s linear infinite }
+  .flow.b { animation-duration: 17s; opacity: .14 }
+  .lnk { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 2 14; animation: run 3.2s linear infinite }
+  .lnk.slow { animation-duration: 5s }
+  @keyframes run { to { stroke-dashoffset: -560 } }
+  @media (prefers-reduced-motion: reduce) { .flow, .lnk { animation: none } }
+</style>
+<g clip-path="url(#card)">
+  <rect width="${w}" height="${h}" fill="url(#bg)"/>
+  <circle cx="${w * 0.1}" cy="${h * 0.95}" r="${Math.max(w, h) * 0.32}" fill="url(#glow1)"/>
+  <circle cx="${w * 0.92}" cy="${h * 0.06}" r="${Math.max(w, h) * 0.32}" fill="url(#glow2)"/>
+  <rect width="${w}" height="${h}" fill="url(#grid)"/>
+  <path class="flow" d="M-20 ${h * 0.2}C${w * 0.2} ${h * 0.04} ${w * 0.35} ${h * 0.38} ${w * 0.56} ${h * 0.22}S${w * 0.88} ${h * 0.05} ${w + 20} ${h * 0.24}"/>
+  <path class="flow b" d="M-20 ${h * 0.88}C${w * 0.19} ${h * 1.02} ${w * 0.37} ${h * 0.68} ${w * 0.56} ${h * 0.8}S${w * 0.85} ${h * 1.02} ${w + 20} ${h * 0.8}"/>
+</g>
+<rect x=".75" y=".75" width="${w - 1.5}" height="${h - 1.5}" rx="${rx}" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="1.5"/>`;
+}
+
+function frame(w, h, kicker, title, body) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="${esc(title)}">
 <title>${esc(title)}</title>
-<defs>
-  <filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0b2a17" flood-opacity=".12"/></filter>
-  ${["green", "gold", "blue", "gray", "red", "violet", "ink"].map(k => `<marker id="ar-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="${C[k]}"/></marker>`).join("")}
-  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#DCE3D8"/></pattern>
-</defs>
-<rect x="1" y="1" width="${w - 2}" height="${h - 2}" rx="18" fill="${C.bg}" stroke="#DDE3DA" stroke-width="1.5"/>
-<rect x="1" y="1" width="${w - 2}" height="${h - 2}" rx="18" fill="url(#dots)" opacity=".7"/>
-<rect x="0" y="0" width="${w}" height="6" rx="3" fill="${C.green}"/>
-<text x="28" y="44" font-family="${FONT}" font-size="21" font-weight="700" fill="${C.ink}">${esc(title)}</text>
-<text x="28" y="66" font-family="${FONT}" font-size="13" fill="${C.gray}">${esc(subtitle)}</text>
+${backdrop(w, h)}
+<text x="44" y="56" font-size="12.5" font-weight="700" letter-spacing=".16em" fill="${C.cyan}" opacity=".9">${esc(kicker.toUpperCase())}</text>
+<text x="44" y="88" font-size="27" font-weight="800" fill="${C.ink}">${esc(title)}</text>
 ${body}
 </svg>
 `;
 }
 
-/** Caja UML: cabecera de color con «estereotipo» y título, y líneas de texto debajo. */
-function box(x, y, w, h, { title, stereo, lines = [], color = C.green, soft = C.greenSoft, dashed = false, mono = false }) {
-  const head = stereo ? 46 : 34;
-  return `<g filter="url(#sh)">
-  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${C.card}" stroke="${color}" stroke-width="2"${dashed ? ' stroke-dasharray="6 5"' : ""}/>
-  <path d="M${x} ${y + 12} a12 12 0 0 1 12 -12 h${w - 24} a12 12 0 0 1 12 12 v${head - 12} h${-w}z" fill="${soft}"/>
-  <line x1="${x}" y1="${y + head}" x2="${x + w}" y2="${y + head}" stroke="${color}" stroke-width="1.2" opacity=".45"/>
-  ${stereo ? `<text x="${x + w / 2}" y="${y + 18}" text-anchor="middle" font-family="${FONT}" font-size="11" fill="${color}" opacity=".9">«${esc(stereo)}»</text>` : ""}
-  <text x="${x + w / 2}" y="${y + (stereo ? 36 : 23)}" text-anchor="middle" font-family="${FONT}" font-size="15" font-weight="700" fill="${C.ink}">${esc(title)}</text>
-  ${lines.map((l, i) => `<text x="${x + 12}" y="${y + head + 20 + i * 17}" font-family="${mono ? MONO : FONT}" font-size="${mono ? 11.5 : 12.5}" fill="${C.ink}" opacity=".85">${esc(l)}</text>`).join("")}
+/** Nodo: ícono dentro de un círculo de vidrio con halo de color, título y una línea de apoyo. `at` = momento (0–1) en que brilla. */
+function node(cx, cy, { icon, title, caption, color = C.blue, r = 38, at = null, T = 8, dashed = false, small = false }) {
+  const s = (r * 0.9) / 24, haloKey = Object.keys(C).find(k => C[k] === color) || "blue";
+  const glowAnim = at == null ? ""
+    : `<animate attributeName="opacity" values=".3;.3;1;.3;.3" keyTimes="0;${Math.max(0.001, at - 0.04).toFixed(3)};${at.toFixed(3)};${Math.min(0.999, at + 0.14).toFixed(3)};1" dur="${T}s" repeatCount="indefinite"/>`;
+  return `<g>
+  <circle cx="${cx}" cy="${cy}" r="${r * 2}" fill="url(#halo-${haloKey})" opacity="${at == null ? ".5" : ".3"}">${glowAnim}</circle>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="${C.panel}" stroke="${color}" stroke-opacity=".75" stroke-width="1.8"${dashed ? ' stroke-dasharray="5 5"' : ""}/>
+  <circle cx="${cx}" cy="${cy}" r="${r - 6}" fill="none" stroke="#fff" stroke-opacity=".06"/>
+  <g transform="translate(${(cx - 12 * s).toFixed(1)} ${(cy - 12 * s).toFixed(1)}) scale(${s.toFixed(3)})" fill="none" stroke="${color}" stroke-width="${(1.6 / s).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round">${ICON[icon]}</g>
+  ${title ? `<text x="${cx}" y="${cy + r + 30}" text-anchor="middle" font-size="${small ? 14.5 : 16.5}" font-weight="700" fill="${C.ink}">${esc(title)}</text>` : ""}
+  ${caption ? `<text x="${cx}" y="${cy + r + (small ? 49 : 52)}" text-anchor="middle" font-size="${small ? 12 : 13}" fill="${C.sub}">${esc(caption)}</text>` : ""}
 </g>`;
 }
 
-/** Punto que viaja por un camino en bucle. */
-const dot = (path, color, dur, begin = 0, r = 5) =>
-  `<circle r="${r}" fill="${color}" opacity="0"><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${path}"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.85;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/></circle>`;
+/** Conexión: trazo base tenue + trazo punteado que fluye en la dirección del camino. */
+const link = (d, color, { dashed = false, slow = false, op = 0.9 } = {}) =>
+  `<path d="${d}" fill="none" stroke="${color}" stroke-opacity=".2" stroke-width="2"${dashed ? ' stroke-dasharray="5 7"' : ""}/>
+  <path class="lnk${slow ? " slow" : ""}" d="${d}" stroke="${color}" stroke-opacity="${op}"/>`;
 
-const label = (x, y, t, color = C.gray, anchor = "middle", size = 12) =>
-  `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="${FONT}" font-size="${size}" fill="${color}" paint-order="stroke" stroke="${C.bg}" stroke-width="4" stroke-linejoin="round">${esc(t)}</text>`;
+/** Pulso de luz que recorre un camino. */
+const pulse = (d, color, dur, begin = 0, r = 4.5) =>
+  `<g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.08;.88;1" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>
+  <circle r="${r * 2.4}" fill="${color}" opacity=".45" filter="url(#blur)"><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${d}"/></circle>
+  <circle r="${r}" fill="#fff"><animateMotion dur="${dur}s" begin="${begin}s" repeatCount="indefinite" path="${d}"/></circle></g>`;
 
-/** Aparece en el instante `at` de un ciclo de `T` segundos y desaparece al final (para secuencias en bucle). */
-const appear = (at, T, inner) => {
-  const a = Math.max(0.001, at / T), b = Math.min(0.9, a + 0.035);
-  return `<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;${a.toFixed(3)};${b.toFixed(3)};0.94;1" dur="${T}s" repeatCount="indefinite"/>${inner}</g>`;
-};
+/** Cápsula de texto (etiqueta sobre una conexión o nota). */
+function tag(x, y, text, color = C.sub, { icon = null } = {}) {
+  const w = text.length * 6.9 + (icon ? 40 : 26);
+  return `<g><rect x="${(x - w / 2).toFixed(1)}" y="${y - 14}" width="${w.toFixed(1)}" height="28" rx="14" fill="${C.panel}" fill-opacity=".92" stroke="${color}" stroke-opacity=".45"/>
+  ${icon ? `<g transform="translate(${(x - w / 2 + 11).toFixed(1)} ${y - 7}) scale(.58)" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${ICON[icon]}</g>` : ""}
+  <text x="${(x + (icon ? 9 : 0)).toFixed(1)}" y="${y + 4.5}" text-anchor="middle" font-size="12.5" font-weight="600" fill="${color}">${esc(text)}</text></g>`;
+}
 
 /* =====================================================================
-   0. Portada animada: una malla que se va completando
+   0. Portada
    ===================================================================== */
 function hero() {
-  const W = 960, H = 300, cols = 12, rows = 5, chh = 26, gy = 9, x0 = 440, y0 = 52, T = 9;
-  const step = (W - x0 - 52) / cols; // la cuadrícula llena el panel blanco
+  const W = 1280, H = 380, cols = 12, rows = 5, chh = 30, gy = 10, x0 = 690, y0 = 92, T = 9;
+  const step = (W - x0 - 70) / cols;
   let cells = "";
   for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
     const x = x0 + c * step, y = y0 + r * (chh + gy);
-    const order = c * rows + r, at = (order / (cols * rows)) * 0.7; // se aprueban de izquierda a derecha
-    const cur = c === 6 || c === 7 ? 1 : 0;
-    cells += `<rect x="${x.toFixed(1)}" y="${y}" width="${(step - 7).toFixed(1)}" height="${chh}" rx="6" fill="${C.graySoft}" stroke="${C.line}" stroke-width="1.2">
-      <animate attributeName="fill" values="${C.graySoft};${C.graySoft};${cur ? C.blueSoft : C.greenSoft};${cur ? C.blueSoft : C.greenSoft};${C.graySoft}" keyTimes="0;${at.toFixed(3)};${(at + 0.03).toFixed(3)};0.93;1" dur="${T}s" repeatCount="indefinite"/>
-      <animate attributeName="stroke" values="${C.line};${C.line};${cur ? C.blue : C.green};${cur ? C.blue : C.green};${C.line}" keyTimes="0;${at.toFixed(3)};${(at + 0.03).toFixed(3)};0.93;1" dur="${T}s" repeatCount="indefinite"/>
-    </rect>`;
+    const at = ((c * rows + r) / (cols * rows)) * 0.7;
+    const cur = c === 6 || c === 7;
+    const on = cur ? C.blue : C.green, onSoft = cur ? "rgba(111,168,255,.32)" : "rgba(61,220,151,.30)", off = "rgba(255,255,255,.05)", offS = "rgba(255,255,255,.12)";
+    const kt = `0;${at.toFixed(3)};${(at + 0.03).toFixed(3)};0.93;1`;
+    cells += `<rect x="${x.toFixed(1)}" y="${y}" width="${(step - 8).toFixed(1)}" height="${chh}" rx="8" fill="${off}" stroke="${offS}" stroke-width="1.2">
+      <animate attributeName="fill" values="${off};${off};${onSoft};${onSoft};${off}" keyTimes="${kt}" dur="${T}s" repeatCount="indefinite"/>
+      <animate attributeName="stroke" values="${offS};${offS};${on};${on};${offS}" keyTimes="${kt}" dur="${T}s" repeatCount="indefinite"/></rect>`;
   }
-  const bar = `<rect x="40" y="214" width="320" height="12" rx="6" fill="${C.graySoft}"/><rect x="40" y="214" width="0" height="12" rx="6" fill="${C.green}"><animate attributeName="width" values="0;320;320;0" keyTimes="0;0.72;0.93;1" dur="${T}s" repeatCount="indefinite"/></rect>`;
+  const ly = y0 + rows * (chh + gy) + 14;
+  const legend = [["Aprobada", C.green, "rgba(61,220,151,.30)"], ["En curso", C.blue, "rgba(111,168,255,.32)"], ["Pendiente", "rgba(255,255,255,.25)", "rgba(255,255,255,.05)"]]
+    .map(([t, s, f], i) => `<rect x="${x0 + i * 120}" y="${ly}" width="13" height="13" rx="4" fill="${f}" stroke="${s}"/><text x="${x0 + i * 120 + 20}" y="${ly + 11}">${t}</text>`).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Malla UTESA">
 <title>Malla UTESA</title>
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B6B3A"/><stop offset="1" stop-color="#00542B"/></linearGradient>
-<pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#ffffff" opacity=".08"/></pattern></defs>
-<rect width="${W}" height="${H}" rx="22" fill="url(#g)"/><rect width="${W}" height="${H}" rx="22" fill="url(#dots)"/>
-<rect x="${x0 - 20}" y="${y0 - 20}" width="${W - 28 - (x0 - 20)}" height="${rows * (chh + gy) + 64}" rx="16" fill="#ffffff" opacity=".96"/>
+${backdrop(W, H, 28)}
+<rect x="${x0 - 26}" y="${y0 - 26}" width="${W - 44 - (x0 - 26)}" height="${rows * (chh + gy) + 74}" rx="20" fill="${C.panel}" fill-opacity=".7" stroke="#fff" stroke-opacity=".08"/>
 ${cells}
-<text x="40" y="96" font-family="${FONT}" font-size="40" font-weight="800" fill="#fff">Malla UTESA</text>
-<text x="40" y="132" font-family="${FONT}" font-size="17" fill="#DCEFE2">Tu malla curricular con tu progreso real:</text>
-<text x="40" y="156" font-family="${FONT}" font-size="17" fill="#DCEFE2">aprobadas, en curso, disponibles y bloqueadas.</text>
-<text x="40" y="200" font-family="${FONT}" font-size="13" fill="#BFE3CC">Avance de la carrera</text>
-${bar}
-<text x="40" y="262" font-family="${FONT}" font-size="12.5" fill="#BFE3CC">18 carreras · pénsum 2023 · proyecto estudiantil independiente</text>
-<g font-family="${FONT}" font-size="12" fill="${C.ink}"><rect x="${x0}" y="${y0 + rows * (chh + gy) + 10}" width="12" height="12" rx="3" fill="${C.greenSoft}" stroke="${C.green}"/><text x="${x0 + 18}" y="${y0 + rows * (chh + gy) + 20}">Aprobada</text>
-<rect x="${x0 + 100}" y="${y0 + rows * (chh + gy) + 10}" width="12" height="12" rx="3" fill="${C.blueSoft}" stroke="${C.blue}"/><text x="${x0 + 118}" y="${y0 + rows * (chh + gy) + 20}">En curso</text>
-<rect x="${x0 + 200}" y="${y0 + rows * (chh + gy) + 10}" width="12" height="12" rx="3" fill="${C.graySoft}" stroke="${C.line}"/><text x="${x0 + 218}" y="${y0 + rows * (chh + gy) + 20}">Pendiente</text></g>
+<g font-size="12.5" fill="${C.sub}">${legend}</g>
+<text x="90" y="150" font-size="62" font-weight="800" fill="url(#ink)">Malla UTESA</text>
+<text x="92" y="200" font-size="25" font-weight="700" fill="${C.ink}">Tu malla curricular, con tu progreso real</text>
+<text x="92" y="236" font-size="17" fill="${C.sub}">Aprobadas · en curso · disponibles · bloqueadas</text>
+<rect x="92" y="268" width="420" height="8" rx="4" fill="rgba(255,255,255,.08)"/>
+<rect x="92" y="268" width="0" height="8" rx="4" fill="url(#ink)"><animate attributeName="width" values="0;420;420;0" keyTimes="0;0.72;0.93;1" dur="${T}s" repeatCount="indefinite"/></rect>
+<text x="92" y="314" font-size="14" fill="${C.sub}" opacity=".85">18 carreras  ·  pénsum 2023  ·  proyecto estudiantil independiente</text>
 </svg>
 `;
 }
 
 /* =====================================================================
-   1. Arquitectura (diagrama de componentes)
+   1. Arquitectura
    ===================================================================== */
 function architecture() {
-  const W = 980, H = 560;
+  const W = 1280, H = 600, y = 330;
+  const P = { est: [150, y], app: [440, y], api: [720, y], db: [1000, y], auth: [720, 168], live: [440, 168], portal: [1130, 500] };
+  const path = {
+    estApp: `M${P.est[0] + 40} ${y} L${P.app[0] - 40} ${y}`,
+    appApi: `M${P.app[0] + 40} ${y} L${P.api[0] - 40} ${y}`,
+    apiDb: `M${P.api[0] + 40} ${y} L${P.db[0] - 40} ${y}`,
+    estAuth: `M${P.est[0]} ${y - 40} C ${P.est[0]} 190, 520 96, ${P.auth[0] - 34} ${P.auth[1]}`,
+    apiAuth: `M${P.api[0]} ${y - 40} L${P.auth[0]} ${P.auth[1] + 34}`,
+    appLive: `M${P.app[0]} ${y - 40} L${P.live[0]} ${P.live[1] + 34}`,
+    apiPortal: `M${P.api[0] + 28} ${y + 28} C 820 470, 960 500, ${P.portal[0] - 36} ${P.portal[1]}`,
+    estPortal: `M${P.est[0]} ${y + 40} C 200 570, 900 585, ${P.portal[0] - 26} ${P.portal[1] + 26}`,
+  };
   const body = `
-  <rect x="250" y="92" width="410" height="400" rx="16" fill="#FFFFFF" fill-opacity=".55" stroke="${C.gold}" stroke-width="1.6" stroke-dasharray="7 6"/>
-  ${label(455, 482, "Cloudflare · plan gratuito", C.gold, "middle", 12.5)}
-  ${box(32, 228, 180, 120, { title: "Estudiante", stereo: "actor", lines: ["Navegador o teléfono", "Marcador (opcional)"], color: C.ink, soft: C.graySoft })}
-  ${box(280, 130, 350, 100, { title: "Cloudflare Pages", stereo: "componente", lines: ["Sitio estático: HTML, CSS y JS (app/)", "Sin build · cache-busting por commit"] })}
-  ${box(280, 300, 175, 150, { title: "Worker /api", stereo: "componente", lines: ["Verifica el token", "Permisos y límites", "Moderación", "Vinculación UTESA"] })}
-  ${box(480, 300, 150, 150, { title: "D1 (SQLite)", stereo: "base de datos", lines: ["Perfiles y avance", "Chat y amistades", "Suspensiones", "Registro"], color: C.blue, soft: C.blueSoft })}
-  ${box(712, 120, 240, 120, { title: "Firebase", stereo: "servicio externo", lines: ["Auth: inicio de sesión", "Firestore: avisos en vivo", "(sin contenido de mensajes)"], color: C.violet, soft: C.violetSoft })}
-  ${box(712, 318, 240, 130, { title: "Portal de UTESA", stereo: "sistema externo", lines: ["Solo lectura:", "pendientes · inscritas", "resumen (contadores)"], color: C.red, soft: C.redSoft, dashed: true })}
-
-  <path id="p1" d="M212 262 C 245 230, 250 190, 280 182" fill="none" stroke="${C.green}" stroke-width="2.2" marker-end="url(#ar-green)"/>
-  <path id="p2" d="M212 300 C 240 320, 250 370, 280 372" fill="none" stroke="${C.green}" stroke-width="2.2" marker-end="url(#ar-green)"/>
-  <path d="M455 375 L480 375" fill="none" stroke="${C.blue}" stroke-width="2.2" marker-end="url(#ar-blue)" marker-start="url(#ar-blue)"/>
-  <path d="M122 228 C 140 120, 520 70, 712 160" fill="none" stroke="${C.violet}" stroke-width="2" marker-end="url(#ar-violet)"/>
-  <path d="M455 330 C 560 260, 620 230, 712 214" fill="none" stroke="${C.violet}" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ar-violet)"/>
-  <path d="M630 420 C 670 420, 680 400, 712 392" fill="none" stroke="${C.red}" stroke-width="2.2" marker-end="url(#ar-red)"/>
-  <path d="M122 348 C 160 520, 640 540, 800 448" fill="none" stroke="${C.red}" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ar-red)"/>
-
-  ${label(122, 216, "1 · carga la app", C.green)}
-  ${label(122, 368, "2 · API con token", C.green)}
-  ${label(470, 104, "inicio de sesión · token", C.violet)}
-  ${label(612, 262, "verifica la firma", C.violet)}
-  ${label(668, 438, "inicio directo", C.red)}
-  ${label(450, 528, "marcador: corre en el navegador del estudiante", C.red)}
-
-  ${dot("M212 262 C 245 230, 250 190, 280 182", C.green, 3, 0)}
-  ${dot("M212 300 C 240 320, 250 370, 280 372", C.green, 3, 0.8)}
-  ${dot("M455 375 L480 375", C.blue, 1.2, 0.3, 4)}
-  ${dot("M122 228 C 140 120, 520 70, 712 160", C.violet, 4, 0.4)}
-  ${dot("M630 420 C 670 420, 680 400, 712 392", C.red, 2.4, 1.2)}
-  ${dot("M122 348 C 160 520, 640 540, 800 448", C.red, 4.5, 2)}
-  `;
-  return frame(W, H, "Arquitectura", "Cómo se conectan las piezas · los puntos muestran el flujo de datos", body);
+  <rect x="345" y="248" width="745" height="190" rx="34" fill="#F38020" fill-opacity=".05" stroke="#F38020" stroke-opacity=".28" stroke-dasharray="4 8"/>
+  ${tag(1000, 438, "Cloudflare · gratis", "#F6A55A")}
+  ${link(path.estApp, C.cyan)}${link(path.appApi, C.blue)}${link(path.apiDb, C.green)}
+  ${link(path.estAuth, C.violet, { slow: true })}${link(path.apiAuth, C.violet, { dashed: true, slow: true, op: 0.6 })}${link(path.appLive, C.violet, { dashed: true, slow: true, op: 0.6 })}
+  ${link(path.apiPortal, C.red)}${link(path.estPortal, C.red, { dashed: true, slow: true, op: 0.6 })}
+  ${pulse(path.estApp, C.cyan, 2.4, 0)}${pulse(path.appApi, C.blue, 2.4, 0.8)}${pulse(path.apiDb, C.green, 2.4, 1.6)}${pulse(path.apiPortal, C.red, 3.2, 2.2)}${pulse(path.estAuth, C.violet, 3.6, 0.4)}
+  ${node(...P.est, { icon: "user", title: "Estudiante", caption: "navegador o teléfono", color: C.cyan })}
+  ${node(...P.app, { icon: "browser", title: "App", caption: "Pages · sitio estático", color: C.blue })}
+  ${node(...P.api, { icon: "server", title: "API", caption: "Worker · reglas y permisos", color: C.blue })}
+  ${node(...P.db, { icon: "db", title: "Datos", caption: "D1 · SQLite", color: C.green })}
+  ${node(...P.auth, { icon: "key", title: "Identidad", caption: "Firebase Auth", color: C.violet, small: true, r: 32 })}
+  ${node(...P.live, { icon: "bolt", title: "Avisos en vivo", caption: "solo «hay algo nuevo»", color: C.violet, small: true, r: 32 })}
+  ${node(...P.portal, { icon: "building", title: "Portal UTESA", caption: "solo lectura", color: C.red, dashed: true, small: true, r: 34 })}
+  ${tag(560, 560, "marcador: corre en tu navegador", C.red)}`;
+  return frame(W, H, "Arquitectura", "Una app estática, una API y una base de datos", body);
 }
 
 /* =====================================================================
-   2. Vinculación con UTESA (diagrama de secuencia)
+   2. Vinculación con UTESA
    ===================================================================== */
-function syncSequence() {
-  const W = 980, H = 720, T = 16;
-  const lanes = [["Estudiante", 110, C.ink, C.graySoft], ["App (navegador)", 340, C.green, C.greenSoft], ["Worker /api", 590, C.green, C.greenSoft], ["Portal UTESA", 850, C.red, C.redSoft]];
-  const X = Object.fromEntries(lanes.map(([n, x]) => [n, x]));
-  let s = lanes.map(([n, x, c, soft]) => `
-    <g filter="url(#sh)"><rect x="${x - 85}" y="86" width="170" height="44" rx="10" fill="${soft}" stroke="${c}" stroke-width="2"/></g>
-    <text x="${x}" y="114" text-anchor="middle" font-family="${FONT}" font-size="14.5" font-weight="700" fill="${C.ink}">${esc(n)}</text>
-    <line x1="${x}" y1="130" x2="${x}" y2="${H - 40}" stroke="${c}" stroke-width="1.6" stroke-dasharray="6 6" opacity=".55"/>`).join("");
-  const msgs = [
-    ["Estudiante", "App (navegador)", "matrícula + contraseña", C.ink],
-    ["App (navegador)", "Worker /api", "POST /api/utesa-login (con token)", C.green],
-    ["Worker /api", "Portal UTESA", "inicia sesión", C.red],
-    ["Worker /api", "Portal UTESA", "asignaturas pendientes", C.red],
-    ["Worker /api", "Portal UTESA", "asignaturas inscritas (en curso)", C.red],
-    ["Worker /api", "Portal UTESA", "resumen: contadores", C.red],
-    ["Worker /api", "Portal UTESA", "cierra sesión", C.red],
-    ["Worker /api", "Worker /api", "calcula avance y logros · descarta la contraseña", C.green],
-    ["Worker /api", "App (navegador)", "aprobadas · en curso · contadores", C.green, true],
-    ["App (navegador)", "Estudiante", "revisa la lista antes de guardar", C.ink, true],
-    ["Estudiante", "App (navegador)", "confirma", C.ink],
-    ["App (navegador)", "Worker /api", "PUT /api/user → guardado en D1", C.green],
+function syncFlow() {
+  const W = 1280, H = 540, T = 10, y = 310;
+  const xs = [150, 395, 640, 885, 1130];
+  const steps = [
+    ["key", "Inicias sesión", "matrícula o marcador", C.violet],
+    ["list", "Pendientes", "lo que te falta", C.gold],
+    ["play", "Inscritas", "lo que cursas ahora", C.blue],
+    ["chart", "Tu avance", "pénsum − pendientes", C.cyan],
+    ["check", "Confirmas", "revisas y guardas", C.green],
   ];
-  msgs.forEach(([a, b, t, col, ret], i) => {
-    const y = 168 + i * 38, at = 0.6 + i * 1.05;
-    const colorKey = Object.keys(C).find(k => C[k] === col) || "ink";
-    let g;
-    if (a === b) {
-      const x = X[a];
-      g = `<path d="M${x} ${y - 6} h46 v22 h-40" fill="none" stroke="${col}" stroke-width="2" marker-end="url(#ar-${colorKey})"/>${label(x + 56, y + 10, t, C.ink, "start", 12.5)}`;
-    } else {
-      const x1 = X[a], x2 = X[b], dir = x2 > x1 ? 1 : -1;
-      g = `<line x1="${x1}" y1="${y}" x2="${x2 - dir * 4}" y2="${y}" stroke="${col}" stroke-width="2"${ret ? ' stroke-dasharray="7 5"' : ""} marker-end="url(#ar-${colorKey})"/>
-        <circle r="4.5" fill="${col}"><animateMotion dur="0.7s" begin="${at}s;${at + T}s;${at + 2 * T}s" fill="freeze" path="M${x1} ${y} L${x2} ${y}"/></circle>
-        ${label((x1 + x2) / 2, y - 8, `${i + 1}. ${t}`, C.ink, "middle", 12.5)}`;
-    }
-    s += appear(at, T, g);
+  const track = `M${xs[0]} ${y} C ${xs[0] + 120} ${y - 60}, ${xs[1] - 120} ${y - 60}, ${xs[1]} ${y} S ${xs[2] - 120} ${y + 60}, ${xs[2]} ${y} S ${xs[3] - 120} ${y - 60}, ${xs[3]} ${y} S ${xs[4] - 120} ${y + 60}, ${xs[4]} ${y}`;
+  const hits = [0.05, 0.25, 0.45, 0.65, 0.85];
+  let s = link(track, C.blue, { slow: true });
+  // el portal (solo lectura) alimenta los pasos 2 y 3
+  s += link(`M612 168 C 520 175, 420 200, ${xs[1]} ${y - 40}`, C.red, { dashed: true, slow: true, op: 0.5 }) + link(`M640 192 L640 ${y - 40}`, C.red, { dashed: true, slow: true, op: 0.5 });
+  s += `<g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.04;.9;1" dur="${T}s" repeatCount="indefinite"/>
+    <circle r="12" fill="${C.cyan}" opacity=".5" filter="url(#blur)"><animateMotion dur="${T}s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;.05;.85;1" calcMode="linear" path="${track}"/></circle>
+    <circle r="5.5" fill="#fff"><animateMotion dur="${T}s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;.05;.85;1" calcMode="linear" path="${track}"/></circle></g>`;
+  steps.forEach(([icon, title, caption, color], i) => {
+    s += node(xs[i], y, { icon, title, caption, color, at: hits[i], T });
+    s += `<circle cx="${xs[i] + 30}" cy="${y - 30}" r="10" fill="${C.panel}" stroke="${color}" stroke-opacity=".7"/><text x="${xs[i] + 30}" y="${y - 26}" text-anchor="middle" font-size="11" font-weight="800" fill="${color}">${i + 1}</text>`;
   });
-  s += appear(12.8, T, `<g filter="url(#sh)"><rect x="440" y="634" width="300" height="56" rx="10" fill="${C.goldSoft}" stroke="${C.gold}" stroke-width="1.5"/></g>
-    <text x="456" y="657" font-family="${FONT}" font-size="12.5" font-weight="700" fill="${C.ink}">La contraseña solo existe en memoria</text>
-    <text x="456" y="676" font-family="${FONT}" font-size="12" fill="${C.ink}" opacity=".8">durante esta petición; nunca se guarda.</text>`);
-  return frame(W, H, "Vinculación con UTESA", "Diagrama de secuencia del inicio de sesión directo · se reproduce en bucle", s);
+  s += node(640, 168, { icon: "building", color: C.red, r: 24, dashed: true });
+  s += `<text x="678" y="164" font-size="14.5" font-weight="700" fill="${C.ink}">Portal UTESA</text><text x="678" y="183" font-size="12" fill="${C.sub}">solo lectura · sin notas</text>`;
+  s += tag(470, 478, "la contraseña solo vive en memoria", C.gold, { icon: "lock" });
+  s += tag(810, 478, "el marcador no envía contraseñas", C.cyan, { icon: "shield" });
+  return frame(W, H, "Vinculación con UTESA", "De tu portal a tu malla en un clic", s);
 }
 
 /* =====================================================================
-   3. Estados de una materia (diagrama de estados)
+   3. Estados de una materia
    ===================================================================== */
 function subjectStates() {
-  const W = 980, H = 380, T = 8;
-  const st = [["Bloqueada", 70, C.gray, C.graySoft, "faltan requisitos"], ["Disponible", 300, C.gold, C.goldSoft, "se puede inscribir"], ["En curso", 530, C.blue, C.blueSoft, "inscrita este cuatrimestre"], ["Aprobada", 760, C.green, C.greenSoft, "cuenta para el avance"]];
-  const y = 160, w = 160, h = 72;
-  const hit = [0.04, 0.3, 0.55, 0.8]; // cuándo llega el punto a cada estado
-  let s = `<circle cx="40" cy="${y + h / 2}" r="9" fill="${C.ink}"/><line x1="49" y1="${y + h / 2}" x2="68" y2="${y + h / 2}" stroke="${C.ink}" stroke-width="2" marker-end="url(#ar-ink)"/>`;
-  st.forEach(([n, x, c, soft, sub], i) => {
-    const a = hit[i], b = Math.min(0.97, a + 0.18);
-    s += `<g filter="url(#sh)"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="36" fill="${soft}" stroke="${c}" stroke-width="2.2"${i === 0 ? ' stroke-dasharray="6 5"' : ""}>
-      <animate attributeName="stroke-width" values="2.2;2.2;5;2.2;2.2" keyTimes="0;${a.toFixed(2)};${(a + 0.04).toFixed(2)};${b.toFixed(2)};1" dur="${T}s" repeatCount="indefinite"/></rect></g>
-      <text x="${x + w / 2}" y="${y + 33}" text-anchor="middle" font-family="${FONT}" font-size="16" font-weight="700" fill="${C.ink}">${esc(n)}</text>
-      <text x="${x + w / 2}" y="${y + 53}" text-anchor="middle" font-family="${FONT}" font-size="11.5" fill="${C.ink}" opacity=".7">${esc(sub)}</text>`;
-  });
-  const arrow = (x1, x2, t, col, key) => `<line x1="${x1}" y1="${y + h / 2}" x2="${x2}" y2="${y + h / 2}" stroke="${col}" stroke-width="2.2" marker-end="url(#ar-${key})"/>${label((x1 + x2) / 2, y + h / 2 - 12, t, C.ink, "middle", 12)}`;
-  s += arrow(230, 298, "requisitos ✓", C.gold, "gold") + arrow(460, 528, "la inscribes", C.blue, "blue") + arrow(690, 758, "la apruebas", C.green, "green");
-  s += `<path d="M590 ${y + h} C 560 ${y + h + 80}, 420 ${y + h + 80}, 390 ${y + h + 4}" fill="none" stroke="${C.red}" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ar-red)"/>${label(490, y + h + 78, "reprobada o retirada", C.red)}`;
-  s += `<path d="M380 ${y} C 400 ${y - 70}, 760 ${y - 70}, 830 ${y - 2}" fill="none" stroke="${C.green}" stroke-width="1.6" stroke-dasharray="4 5" marker-end="url(#ar-green)" opacity=".7"/>${label(605, y - 54, "convalidada o marcada a mano", C.green)}`;
-  s += `<circle r="9" fill="#fff" stroke="${C.ink}" stroke-width="2.5"><animateMotion dur="${T}s" repeatCount="indefinite" keyPoints="0;0.02;0.32;0.36;0.66;0.7;1;1" keyTimes="0;0.04;0.26;0.3;0.51;0.55;0.8;1" calcMode="linear" path="M150 ${y + h / 2} L840 ${y + h / 2}"/>
-    <animate attributeName="fill" values="${C.graySoft};${C.gold};${C.blue};${C.green};${C.green}" keyTimes="0;0.3;0.55;0.8;1" dur="${T}s" repeatCount="indefinite"/></circle>`;
-  s += `<text x="${W - 28}" y="${H - 22}" text-anchor="end" font-family="${FONT}" font-size="12" fill="${C.gray}">Colores iguales a los de la app: gris, dorado, azul y verde.</text>`;
-  return frame(W, H, "Estados de una materia", "Diagrama de estados · el punto recorre el camino normal de una materia", s);
+  const W = 1280, H = 460, T = 8, y = 240;
+  const st = [[190, "lock", "Bloqueada", "faltan requisitos", C.gray], [490, "unlock", "Disponible", "la puedes inscribir", C.gold], [790, "play", "En curso", "este cuatrimestre", C.blue], [1090, "check", "Aprobada", "suma a tu avance", C.green]];
+  const hits = [0.04, 0.3, 0.56, 0.82];
+  let s = `<defs><linearGradient id="trk" gradientUnits="userSpaceOnUse" x1="190" y1="0" x2="1090" y2="0"><stop offset="0" stop-color="${C.gray}"/><stop offset=".35" stop-color="${C.gold}"/><stop offset=".65" stop-color="${C.blue}"/><stop offset="1" stop-color="${C.green}"/></linearGradient></defs>`;
+  s += `<path d="M190 ${y} L1090 ${y}" stroke="url(#trk)" stroke-width="3" stroke-opacity=".3"/><path class="lnk slow" d="M190 ${y} L1090 ${y}" stroke="url(#trk)"/>`;
+  s += link(`M790 ${y + 48} C 760 ${y + 150}, 520 ${y + 150}, 490 ${y + 48}`, C.red, { dashed: true, slow: true, op: 0.7 });
+  s += tag(640, y + 132, "reprobada o retirada", C.red);
+  s += tag(340, y - 66, "requisitos listos", C.gold) + tag(640, y - 66, "la inscribes", C.blue) + tag(940, y - 66, "la apruebas", C.green);
+  st.forEach(([x, icon, title, caption, color], i) => { s += node(x, y, { icon, title, caption, color, r: 44, at: hits[i], T, dashed: i === 0 }); });
+  s += `<g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.03;.9;1" dur="${T}s" repeatCount="indefinite"/>
+    <circle r="13" fill="#fff" opacity=".35" filter="url(#blur)"><animateMotion dur="${T}s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;.04;.82;1" calcMode="linear" path="M190 ${y} L1090 ${y}"/></circle>
+    <circle r="6" fill="#fff"><animateMotion dur="${T}s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;.04;.82;1" calcMode="linear" path="M190 ${y} L1090 ${y}"/></circle></g>`;
+  return frame(W, H, "Estados", "El camino de cada materia", s);
 }
 
 /* =====================================================================
-   4. Modelo de datos (diagrama de clases)
+   4. Datos: el perfil en el centro y todo lo que se relaciona con él
    ===================================================================== */
 function dataModel() {
-  const W = 980, H = 620, T = 10;
-  const ent = [
-    ["users", 360, 92, 260, ["pid  (id público)", "name · career", "done[] · current[]", "avatar · frame", "is_mod · is_owner", "needs_setup"], C.green, C.greenSoft],
-    ["messages", 40, 92, 230, ["id · room", "uid → users", "text · hidden", "edited_at"], C.blue, C.blueSoft],
-    ["reports", 40, 300, 230, ["message_id → messages", "reporter_uid", "reason · text (copia)"], C.blue, C.blueSoft],
-    ["friendships", 710, 92, 230, ["from_uid → users", "to_uid → users", "status"], C.violet, C.violetSoft],
-    ["chat_groups", 710, 262, 230, ["id · name · owner", "group_members (gid, uid, role)"], C.violet, C.violetSoft],
-    ["chat_bans", 360, 360, 260, ["uid → users", "until (fecha de fin)", "reason · by_uid"], C.red, C.redSoft],
-    ["mod_log", 710, 412, 230, ["at · actor_uid", "action · target", "detail"], C.gold, C.goldSoft],
-    ["banned", 40, 470, 230, ["uid · at · reason", "snapshot (para reactivar)"], C.red, C.redSoft],
+  const W = 1280, H = 640, cx = 640, cy = 360, rx = 410, ry = 185;
+  const sats = [
+    // ángulos repartidos por la órbita; abajo al centro queda libre para la nota
+    ["chat", "Mensajes", "salas, privados y grupos", C.blue, -165],
+    ["flag", "Reportes", "con copia del texto", C.gold, -125],
+    ["archive", "Eliminadas", "copia para reactivar", C.red, -90],
+    ["users", "Amistades", "solicitudes y amigos", C.violet, -55],
+    ["group", "Grupos", "con sus propios admins", C.violet, -15],
+    ["clock", "Suspensiones", "hasta una fecha", C.red, 35],
+    ["list", "Registro", "acciones del equipo", C.gold, 145],
   ];
-  let s = "";
-  const rel = [
-    ["M270 150 L360 150", "*", "1"], ["M155 230 L155 300", "1", "*"], ["M620 150 L710 150", "1", "*"], ["M620 200 C 670 220, 670 300, 710 300", "*", "*"],
-    ["M490 266 L490 360", "1", "0..1"], ["M620 260 C 680 300, 680 420, 710 450", "1", "*"], ["M360 250 C 300 330, 300 480, 270 510", "", ""],
-  ];
-  rel.forEach(([d, a, b]) => { s += `<path d="${d}" fill="none" stroke="${C.gray}" stroke-width="1.6" opacity=".75"/>`; });
-  ent.forEach(([n, x, y, w, fields, c, soft], i) => {
-    const h = 46 + fields.length * 18 + 10, at = (i / ent.length) * 0.85;
-    s += box(x, y, w, h, { title: n, lines: fields, color: c, soft, mono: true }).replace(`stroke-width="2"`, `stroke-width="2"><animate attributeName="stroke-width" values="2;2;4.5;2;2" keyTimes="0;${at.toFixed(3)};${(at + 0.05).toFixed(3)};${(at + 0.12).toFixed(3)};1" dur="${T}s" repeatCount="indefinite"/></rect><rect x="-9" y="-9" width="0" height="0"`);
+  let s = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-dasharray="3 9"/>`;
+  sats.forEach(([icon, title, caption, color, deg], i) => {
+    const a = (deg * Math.PI) / 180, x = +(cx + rx * Math.cos(a)).toFixed(1), y = +(cy + ry * Math.sin(a)).toFixed(1);
+    s += link(`M${cx} ${cy} L${x} ${y}`, color, { slow: true, op: 0.6 }) + pulse(`M${x} ${y} L${cx} ${cy}`, color, 3.6, i * 0.5, 3.5);
+    s += node(x, y, { icon, title, caption, color, r: 30, small: true });
   });
-  s += label(305, 140, "*", C.gray) + label(345, 140, "1", C.gray) + label(640, 140, "1", C.gray) + label(700, 140, "*", C.gray) + label(500, 290, "1", C.gray) + label(506, 350, "0..1", C.gray);
-  s += label(155, 458, "al eliminar: copia del perfil", C.red, "middle", 11.5);
-  return frame(W, H, "Modelo de datos (D1)", "Diagrama de clases simplificado · se resalta una tabla a la vez", s);
+  s += node(cx, cy, { icon: "id", title: "Tu perfil", caption: "avance · en curso · personaje · rol", color: C.green, r: 54 });
+  s += tag(cx, 600, "entre usuarios solo viaja un id público: nunca tu correo", C.cyan, { icon: "shield" });
+  return frame(W, H, "Datos", "Todo gira alrededor de tu perfil", s);
 }
 
 /* =====================================================================
-   5. Moderación (diagrama de actividad)
+   5. Moderación
    ===================================================================== */
 function moderation() {
-  const W = 980, H = 520, T = 9;
-  let s = `<circle cx="70" cy="140" r="11" fill="${C.ink}"/>`;
-  s += box(110, 104, 200, 72, { title: "Alguien reporta", lines: ["motivo + detalle"], color: C.ink, soft: C.graySoft });
-  s += box(360, 104, 230, 72, { title: "Moderación", lines: ["Configuración → Moderación"] });
-  s += `<path d="M81 140 L110 140" stroke="${C.ink}" stroke-width="2" marker-end="url(#ar-ink)"/><path d="M310 140 L360 140" stroke="${C.green}" stroke-width="2" marker-end="url(#ar-green)"/>`;
-  s += `<path d="M640 110 L680 140 L640 170 L600 140z" fill="${C.goldSoft}" stroke="${C.gold}" stroke-width="2"/><path d="M590 140 L600 140" stroke="${C.green}" stroke-width="2"/>` + label(735, 132, "¿qué hacer?", C.gold, "middle", 12.5);
-  const acts = [["Ocultar mensaje", "el texto queda como evidencia", C.blue, C.blueSoft], ["Suspender del chat", "10 min a 30 días · con motivo", C.gold, C.goldSoft], ["Reiniciar cuenta", "vuelve a configurar su perfil", C.violet, C.violetSoft], ["Eliminar (dueño)", "queda en «Eliminadas»", C.red, C.redSoft]];
-  acts.forEach(([t, sub, c, soft], i) => {
-    const y = 230 + i * 66, key = Object.keys(C).find(k => C[k] === c);
-    s += `<path d="M640 170 C 640 ${y + 20}, 660 ${y + 26}, 700 ${y + 26}" fill="none" stroke="${c}" stroke-width="2" marker-end="url(#ar-${key})"/>`;
-    s += box(700, y, 250, 54, { title: t, color: c, soft }).replace(`y="${y + 23}"`, `y="${y + 21}"`) + label(825, y + 47, sub, C.ink, "middle", 11.5);
-    s += dot(`M640 170 C 640 ${y + 20}, 660 ${y + 26}, 700 ${y + 26}`, c, 2.2, 0.5 + i * 0.55);
+  const W = 1280, H = 600, y = 320;
+  const outs = [["eyeoff", "Ocultar", "el texto queda como evidencia", C.blue, 170], ["clock", "Suspender", "10 min a 30 días · con motivo", C.gold, 270], ["refresh", "Reiniciar", "vuelve a configurar su perfil", C.violet, 370], ["trash", "Eliminar", "solo el dueño · reactivable", C.red, 470]];
+  const rep = [150, y], rev = [420, y], logp = [1150, y], ox = 760;
+  let s = link(`M${rep[0] + 40} ${y} L${rev[0] - 46} ${y}`, C.gold) + pulse(`M${rep[0] + 40} ${y} L${rev[0] - 46} ${y}`, C.gold, 2, 0);
+  outs.forEach(([icon, title, caption, color, oy], i) => {
+    const a = `M${rev[0] + 46} ${y} C 560 ${y}, 620 ${oy}, ${ox - 32} ${oy}`, b = `M${ox + 230} ${oy} C 1020 ${oy}, 1060 ${y}, ${logp[0] - 40} ${y}`;
+    s += link(a, color) + link(b, color, { slow: true, op: 0.5 }) + pulse(a, color, 2.6, 0.6 + i * 0.45, 4);
+    s += node(ox, oy, { icon, color, r: 30 });
+    s += `<text x="${ox + 46}" y="${oy - 3}" font-size="15.5" font-weight="700" fill="${C.ink}">${title}</text><text x="${ox + 46}" y="${oy + 16}" font-size="12.5" fill="${C.sub}">${esc(caption)}</text>`;
   });
-  s += box(330, 330, 250, 86, { title: "Registro de moderación", lines: ["quién · qué · a quién · cuándo"], color: C.gold, soft: C.goldSoft });
-  s += `<path d="M700 300 C 640 340, 620 360, 580 368" fill="none" stroke="${C.gold}" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ar-gold)"/>`;
-  s += box(60, 330, 220, 86, { title: "Reactivar", lines: ["vuelve con su perfil", "y su avance"], color: C.green });
-  s += `<path d="M700 452 C 500 500, 300 470, 200 418" fill="none" stroke="${C.red}" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#ar-red)"/>${label(430, 488, "el dueño puede reactivar", C.red)}${label(455, 318, "todo queda anotado", C.gold, "middle", 11.5)}`;
-  s += dot("M81 140 L110 140 M310 140 L600 140", C.ink, 2.6, 0);
-  s += `<text x="${W - 28}" y="${H - 20}" text-anchor="end" font-family="${FONT}" font-size="12" fill="${C.gray}">La persona suspendida o eliminada ve el motivo en su pantalla.</text>`;
-  return frame(W, H, "Moderación", "Diagrama de actividad · qué pasa cuando se reporta algo", s);
+  s += link(`M${ox} ${470 + 32} C 700 575, 300 575, ${rep[0]} ${y + 42}`, C.green, { dashed: true, slow: true, op: 0.5 });
+  s += tag(430, 556, "el dueño puede reactivarla", C.green, { icon: "refresh" });
+  s += node(...rep, { icon: "flag", title: "Reporte", caption: "motivo + detalle", color: C.gold });
+  s += node(...rev, { icon: "shield", title: "El equipo revisa", caption: "Configuración → Moderación", color: C.cyan, r: 44 });
+  s += node(...logp, { icon: "list", title: "Registro", caption: "quién · qué · cuándo", color: C.gold });
+  return frame(W, H, "Moderación", "Del reporte a la decisión, todo queda anotado", s);
 }
 
-const files = { "hero.svg": hero(), "arquitectura.svg": architecture(), "vinculacion.svg": syncSequence(), "estados-materia.svg": subjectStates(), "modelo-datos.svg": dataModel(), "moderacion.svg": moderation() };
+const files = { "hero.svg": hero(), "arquitectura.svg": architecture(), "vinculacion.svg": syncFlow(), "estados-materia.svg": subjectStates(), "modelo-datos.svg": dataModel(), "moderacion.svg": moderation() };
 for (const [name, svg] of Object.entries(files)) {
   writeFileSync(join(OUT, name), svg);
   console.log(`docs/img/${name}  ${(svg.length / 1024).toFixed(1)} KB`);
