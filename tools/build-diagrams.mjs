@@ -229,13 +229,11 @@ function syncFlow() {
    3. Estados de una materia
    ===================================================================== */
 function subjectStates() {
-  const W = 1280, H = 460, T = 8, y = 240;
+  const W = 1280, H = 400, T = 8, y = 230;
   const st = [[190, "lock", "Bloqueada", "faltan requisitos", C.gray], [490, "unlock", "Disponible", "la puedes inscribir", C.gold], [790, "play", "En curso", "este cuatrimestre", C.blue], [1090, "check", "Aprobada", "suma a tu avance", C.green]];
   const hits = [0.04, 0.3, 0.56, 0.82];
   let s = `<defs><linearGradient id="trk" gradientUnits="userSpaceOnUse" x1="190" y1="0" x2="1090" y2="0"><stop offset="0" stop-color="${C.gray}"/><stop offset=".35" stop-color="${C.gold}"/><stop offset=".65" stop-color="${C.blue}"/><stop offset="1" stop-color="${C.green}"/></linearGradient></defs>`;
   s += `<path d="M190 ${y} L1090 ${y}" stroke="url(#trk)" stroke-width="3" stroke-opacity=".3"/><path class="lnk slow" d="M190 ${y} L1090 ${y}" stroke="url(#trk)"/>`;
-  s += link(`M790 ${y + 48} C 760 ${y + 150}, 520 ${y + 150}, 490 ${y + 48}`, C.red, { dashed: true, slow: true, op: 0.7 });
-  s += tag(640, y + 132, "reprobada o retirada", C.red);
   s += tag(340, y - 66, "requisitos listos", C.gold) + tag(640, y - 66, "la inscribes", C.blue) + tag(940, y - 66, "la apruebas", C.green);
   st.forEach(([x, icon, title, caption, color], i) => { s += node(x, y, { icon, title, caption, color, r: 44, at: hits[i], T, dashed: i === 0 }); });
   s += `<g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.03;.9;1" dur="${T}s" repeatCount="indefinite"/>

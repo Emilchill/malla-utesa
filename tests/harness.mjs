@@ -37,6 +37,7 @@ globalThis.fetch = async (u) => {
     return html(`<input id="txtNombrecar" value="${globalThis.__carrera ?? "Ing"}"><input id="txtPensum" value="2023"><table><tr><th>Cód. Asig.</th><th>Nombre</th></tr>${rows}</table>`);
   }
   // página Asignaturas inscritas (la tabla que carga pagina-asignaturas-inscritas.aspx): sin notas
+  if (u.includes("/asignaturas-inscritas.aspx") && globalThis.__noInscritas) return html("<p>Cargando…</p>"); // la tabla no llegó
   if (u.includes("/asignaturas-inscritas.aspx")) return html(`<table><tr><th>#</th><th>Cód. Asig.</th><th>Nombre</th><th>CR</th><th>Horario</th><th>Aula</th></tr>
     <tr><td>1</td><td>INF-440-003</td><td>Arquitectura</td><td>1</td><td>L 8-10</td><td>A1</td></tr>
     <tr><td>2</td><td>MAT-360-004</td><td>Cálculo IV</td><td>4</td><td>M 8-10</td><td>B2</td></tr></table>`);

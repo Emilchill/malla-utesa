@@ -205,11 +205,15 @@ async function login(request, env) {
     } catch { /* los contadores son opcionales */ }
 
     // materias en curso (página Asignaturas inscritas): opcional, si falla se vincula igual.
-    // Sin tabla = no tiene inscritas este cuatrimestre (lista vacía), salvo que la página no cargara.
-    let current = null;
+    // Como en el navegador: primero el marco (pagina-asignaturas-inscritas.aspx, prepara la sesión) y luego la tabla.
+    // Si la tabla no llega, current = null (no se sabe) para no borrar lo que la persona marcó a mano.
+    let current = null, currentStatus = "error";
     try {
+      await get(`${BASE}pagina-asignaturas-inscritas.aspx`, jar);
       const ins = await get(`${BASE}asignaturas-inscritas.aspx`, jar);
-      if (ins.status === 200) current = parseCurrent(ins.html);
+      if (ins.status === 200 && /C[óo]d\.?\s*Asig/i.test(textOf(ins.html))) { current = parseCurrent(ins.html); currentStatus = "ok"; }
+      else if (ins.status === 200 && /no (tiene|posee|hay)[^<]{0,40}inscrit/i.test(textOf(ins.html))) { current = []; currentStatus = "ok"; } // sin inscritas este cuatrimestre
+      else currentStatus = "sin-tabla";
     } catch { /* opcional */ }
 
     // Logros: solo con inicio de sesión directo y sesión de Firebase válida
@@ -244,6 +248,7 @@ async function login(request, env) {
       counts,
       pending,
       current,
+      currentStatus,
       verified,
     });
   } catch (e) {
