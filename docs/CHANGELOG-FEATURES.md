@@ -17,6 +17,14 @@ pénsum 2023 publicado y no están incluidas.
 > estudiantes. Los datos del pensum pueden contener errores de transcripción —
 > siempre verifica tu avance real con tu coordinación de carrera.
 
+## Materias en curso (2026-11-26)
+
+* Se pueden marcar materias **en curso** desde el detalle de cada materia; salen resaltadas en azul en las tarjetas, el mapa
+  y la hoja impresa, hay un filtro «En curso» y el panel muestra cuántas cursas. No cuentan como aprobadas.
+* El **marcador** y el **inicio de sesión directo** también leen la página *Calificaciones* del portal (`calificaciones.aspx`,
+  la tabla que carga `pagina-calificaciones.aspx`): toman solo la clave de las materias **sin nota final**. Las notas no se leen
+  ni se guardan. Los marcadores guardados antes no traen esta parte: hay que volver a guardarlo (la app lo avisa).
+
 ## Actualización de moderación (2026-11-22)
 
 * **Configuración → Moderación** (solo el equipo): resumen del sitio, **Cuentas** (todas, con buscador y filtros), **Reportes**

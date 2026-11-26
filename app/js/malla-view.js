@@ -38,6 +38,7 @@ function nodeState(m, ctx) {
   if (m.c === "ELECTIVA") return "slot";
   const done = ctx.effSet.has(m.c);
   if (done) return "done";
+  if (ctx.current && ctx.current.has(m.c)) return "current";
   return ctx.isUnlocked(m) ? "open" : "lock";
 }
 
@@ -62,7 +63,7 @@ function nodeHtml(m, ctx) {
   const stagedCls = staged ? (ctx.baseSet.has(m.c) ? " staged-remove" : " staged-add") : "";
   const dim = ctx.matches(m) ? "" : " mg-dim";
   const req = reqText(m, ctx);
-  const label = `${m.c} ${m.n}. ${m.cr} créditos. ${state === "done" ? "Aprobada" : state === "open" ? "Disponible" : "Bloqueada"}.`;
+  const label = `${m.c} ${m.n}. ${m.cr} créditos. ${state === "done" ? "Aprobada" : state === "current" ? "En curso" : state === "open" ? "Disponible" : "Bloqueada"}.`;
   const medal = ctx.medal ? ctx.medal(m.c) : "";
   return `<button type="button" class="mg-node st-${state}${stagedCls}${dim}${medal ? " has-medal" : ""}" data-code="${m.c}" aria-label="${esc(label)}">
     ${medal}
@@ -126,6 +127,7 @@ export function renderMallaGraph(container, ctx) {
     <div class="mg">
       <div class="mg-hint">
         <span><i class="lg lg-done">✓</i>Aprobada</span>
+        <span><i class="lg lg-current"></i>En curso</span>
         <span><i class="lg lg-open"></i>Disponible</span>
         <span><i class="lg lg-lock"></i>Bloqueada</span>
         <span class="mg-hint-tip">Toca una materia para ver su ruta · arrastra para moverte · Ctrl + rueda o pellizca para el zoom</span>

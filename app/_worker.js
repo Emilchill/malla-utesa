@@ -125,6 +125,26 @@ function parsePending(html) {
   return out;
 }
 
+/**
+ * Materias en curso de la página "Calificaciones": claves (sin sección) de las filas SIN nota final.
+ * De las notas solo se mira si la columna NF está vacía; ningún valor sale de esta función.
+ */
+function parseCurrent(html) {
+  const out = [];
+  for (const t of tablesOf(html)) {
+    const rows = rowsOf(t);
+    if (!rows.length) continue;
+    const ci = rows[0].findIndex(c => /c[óo]d/i.test(c));
+    const nf = rows[0].findIndex(c => /^NF$/i.test(c.trim()));
+    if (ci === -1 || nf === -1) continue;
+    for (const r of rows.slice(1)) {
+      const m = String(r[ci] || "").toUpperCase().match(/([A-Z]{2,4})[-\s]?(\d{3})/);
+      if (m && !String(r[nf] || "").trim()) { const c = `${m[1]}-${m[2]}`; if (!out.includes(c)) out.push(c); }
+    }
+  }
+  return out.slice(0, 40);
+}
+
 /* ---------- Ruta /api/utesa-login ---------- */
 async function login(request, env) {
   if (request.method !== "POST") return fail(405, "metodo", "Método no permitido.");
@@ -185,6 +205,13 @@ async function login(request, env) {
       counts = { aprob: n("txtCanAprob"), insc: n("txtCanInscri"), pend: n("txtCanPens") };
     } catch { /* los contadores son opcionales */ }
 
+    // materias en curso (página Calificaciones): opcional, si falla se vincula igual
+    let current = null;
+    try {
+      const cal = await get(`${BASE}calificaciones.aspx`, jar);
+      if (cal.status === 200 && /C[óo]d\.?\s*Asig/i.test(textOf(cal.html))) current = parseCurrent(cal.html);
+    } catch { /* opcional */ }
+
     // Logros: solo con inicio de sesión directo y sesión de Firebase válida
     let verified = null;
     try {
@@ -216,6 +243,7 @@ async function login(request, env) {
       pensum: inputValue(pend.html, "txtPensum"),
       counts,
       pending,
+      current,
       verified,
     });
   } catch (e) {
@@ -366,7 +394,7 @@ async function ensureSchema(db) {
   // columnas añadidas después (si ya existen, SQLite avisa y se ignora)
   for (const col of ["pid TEXT", "frame TEXT", "earned TEXT NOT NULL DEFAULT '[]'", "verified_at INTEGER", "verified_pending TEXT",
     "is_mod INTEGER NOT NULL DEFAULT 0", "is_owner INTEGER NOT NULL DEFAULT 0", "dir_hidden INTEGER NOT NULL DEFAULT 0",
-    "last_seen INTEGER", "hide_online INTEGER NOT NULL DEFAULT 0", "verified_src TEXT", "needs_setup INTEGER NOT NULL DEFAULT 0"]) {
+    "last_seen INTEGER", "hide_online INTEGER NOT NULL DEFAULT 0", "verified_src TEXT", "needs_setup INTEGER NOT NULL DEFAULT 0", "current TEXT NOT NULL DEFAULT '[]'"]) {
     try { await db.prepare(`ALTER TABLE users ADD COLUMN ${col}`).run(); } catch { /* ya existe */ }
   }
   try { await db.prepare("ALTER TABLE messages ADD COLUMN hidden_at INTEGER").run(); } catch { /* ya existe o la tabla aún no existe */ }
@@ -509,6 +537,11 @@ function cleanFields(f) {
     if (!Array.isArray(f.done) || f.done.length > 400 || !f.done.every(c => typeof c === "string" && CODE.test(c))) return "Materias no válidas.";
     out.done = JSON.stringify([...new Set(f.done)]);
   }
+  // materias que está cursando ahora (las marca la persona o llegan del portal); no cuentan como aprobadas
+  if ("current" in f) {
+    if (!Array.isArray(f.current) || f.current.length > 40 || !f.current.every(c => typeof c === "string" && CODE.test(c))) return "Materias en curso no válidas.";
+    out.current = JSON.stringify([...new Set(f.current)]);
+  }
   if ("utesaSync" in f) {
     if (f.utesaSync === null) out.utesa_sync = null;
     else {
@@ -522,7 +555,7 @@ function cleanFields(f) {
 
 const userOut = (r) => ({
   name: r.name, career: r.career, theme: r.theme || null, avatar: r.avatar || null, avatarBg: r.avatar_bg || null,
-  done: JSON.parse(r.done || "[]"), utesaSync: r.utesa_sync ? JSON.parse(r.utesa_sync) : null, createdAt: r.created_at,
+  done: JSON.parse(r.done || "[]"), current: JSON.parse(r.current || "[]"), utesaSync: r.utesa_sync ? JSON.parse(r.utesa_sync) : null, createdAt: r.created_at,
   frame: r.frame || null, earned: liveEarned(r), verifiedAt: r.verified_at || null, pid: r.pid || null,
   pct: progressPct(r),
   dirHidden: !!r.dir_hidden, hideOnline: !!r.hide_online,
@@ -666,7 +699,7 @@ async function logMod(env, actorUid, action, target, detail) {
 }
 /** Deja el perfil como recién creado (nombre, apariencia, avance, logros y preferencias). Conserva rol, amistades y mensajes. */
 async function resetProfile(env, uid) {
-  return env.DB.prepare(`UPDATE users SET name = 'Estudiante', theme = NULL, avatar = NULL, avatar_bg = NULL, frame = NULL, done = '[]', utesa_sync = NULL,
+  return env.DB.prepare(`UPDATE users SET name = 'Estudiante', theme = NULL, avatar = NULL, avatar_bg = NULL, frame = NULL, done = '[]', current = '[]', utesa_sync = NULL,
       earned = '[]', verified_at = NULL, verified_pending = NULL, verified_src = NULL, hide_online = 0, dir_hidden = 0, needs_setup = 1, updated_at = ? WHERE uid = ?`)
     .bind(Date.now(), uid).run();
 }

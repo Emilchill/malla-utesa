@@ -53,4 +53,16 @@ const normal = analyzePayload(`@@MALLA MODO=sync|CARRERA=Derecho|PENSUM=2023${ro
 assert.ok(normal.error.includes("<strong>Ingeniería en Sistemas Computacionales</strong>") && normal.error.includes("UTESA dice: Derecho"), "mensaje de error cambiado");
 ok("mensaje de error legítimo intacto");
 
+// materias en curso (líneas C del marcador nuevo)
+const okRows = "\nP\tINF-117\nP\tMAT-160"; // pendientes que sí son del pensum de prueba
+const cur = analyzePayload(`@@MALLA MODO=sync|CARRERA=Ing|PENSUM=2023|CURSO=3${okRows}\nC\tINF-117\nC\tMAT160\nC\tZZZ-999`, pensum);
+assert.deepEqual(cur.current, ["INF-117", "MAT-160"]);
+ok("en curso: lee las líneas C, normaliza la clave y descarta las que no son del pensum");
+const old = analyzePayload(`@@MALLA MODO=sync|CARRERA=Ing|PENSUM=2023${okRows}`, pensum);
+assert.equal(old.current, null);
+ok("marcador viejo (sin líneas C ni CURSO): no toca lo marcado a mano");
+const none = analyzePayload(`@@MALLA MODO=sync|CARRERA=Ing|PENSUM=2023|CURSO=0${okRows}`, pensum);
+assert.deepEqual(none.current, []);
+ok("CURSO=0: no está cursando nada (se limpian las en curso)");
+
 console.log(`\nTODO OK (${n} pruebas)`);

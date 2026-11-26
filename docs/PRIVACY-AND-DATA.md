@@ -64,3 +64,10 @@ refresque. El cliente trata un fallo de aviso como no crítico y sigue por sonde
 * **Chat:** el límite de 15 mensajes/min y 1,2 s va dentro de la inserción; la rama `since` respeta los bloqueos; las recargas por avisos de Firestore se agrupan (máx. 1 cada 1,5 s).
 * **Moderadores:** la degradación quita rol, marco MOD y artículos exclusivos en una sola sentencia, y guardar un marco MOD o un artículo exclusivo exige seguir siendo del equipo en ese instante.
 * **Enlace #utesa:** si el importador se abre desde un enlace, la verificación de logros queda desmarcada y hay que confirmarla.
+
+## Materias en curso (2026-11-26)
+
+* Para saber qué materias cursa alguien ahora, el marcador y el inicio de sesión directo abren la página *Calificaciones* del portal.
+  De esa tabla se toma **solo la clave** de cada materia y **si su nota final está vacía**. Ninguna calificación (parciales ni nota final)
+  sale del navegador ni del servidor, ni se guarda (`parseCurrent` en `app/_worker.js`; prueba en `tests/server.core.test.mjs`).
+* Se guarda en `users.current` (lista de claves) y se borra al reiniciar la cuenta.

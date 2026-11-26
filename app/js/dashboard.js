@@ -23,6 +23,7 @@ async function saveUser(fields) {
 let userData = null;
 let pensum = null;
 let doneSet = new Set();
+let currentSet = new Set(); // materias en curso este cuatrimestre (no cuentan como aprobadas)
 let activeFilter = "all";
 let searchTerm = "";
 
@@ -79,6 +80,7 @@ function showToast(text, ms = 2200) {
 function boot() {
   pensum = PENSUMS[userData.career] || PENSUMS.ISC;
   doneSet = new Set(userData.done || []);
+  currentSet = new Set((userData.current || []).filter(c => !doneSet.has(c)));
 
   applyTheme(userData.theme || getLocalTheme());
 
@@ -177,9 +179,12 @@ async function applyImportedCodes(codes, extras = {}) {
     aprob: c.aprob ?? null, insc: c.insc ?? null, pend: c.pend ?? null,
   };
   userData.utesaSync = utesaSync;
+  const cur = extras.current; // del portal: lo que está inscrito ahora (reemplaza lo marcado a mano)
+  if (Array.isArray(cur)) { currentSet = new Set(cur.filter(c => !doneSet.has(c))); userData.current = [...currentSet]; }
+  else if ([...currentSet].some(c => doneSet.has(c))) { currentSet = new Set([...currentSet].filter(c => !doneSet.has(c))); userData.current = [...currentSet]; }
   render();
   try {
-    await saveUser({ done: doneArr, utesaSync });
+    await saveUser({ done: doneArr, utesaSync, current: userData.current || [] });
     showToast(added.length
       ? `${added.length} materia${added.length === 1 ? "" : "s"} sincronizada${added.length === 1 ? "" : "s"} con UTESA ✓`
       : "Sincronizado: tu progreso ya estaba al día ✓");
@@ -580,7 +585,8 @@ function renderStats() {
   const s = computeStats();
   document.getElementById("perc-txt").textContent = s.pct + "%";
   const faltan = Math.max(0, s.totalCreditos - s.creditosHechos);
-  document.getElementById("perc-desc").textContent = faltan === 0 ? "¡Completaste tu pensum! 🎓" : `Te faltan ${faltan} créditos`;
+  const curN = [...currentSet].filter(c => !doneSet.has(c)).length;
+  document.getElementById("perc-desc").textContent = faltan === 0 ? "¡Completaste tu pensum! 🎓" : `Te faltan ${faltan} créditos${curN ? ` · ${curN} en curso` : ""}`;
   document.getElementById("stat-done").textContent = s.doneCount;
   document.getElementById("stat-pending").textContent = Math.max(0, s.totalCount - s.doneCount);
   document.getElementById("stat-credits").textContent = `${s.creditosHechos} / ${s.totalCreditos}`;
@@ -600,6 +606,7 @@ function subjectMatchesFilter(m) {
   const done = doneSet.has(m.c);
   if (activeFilter === "done") return done;
   if (activeFilter === "pending") return !done;
+  if (activeFilter === "current") return !done && currentSet.has(m.c);
   return true;
 }
 
@@ -629,6 +636,8 @@ function buildCard(materia) {
   if (done) cls += " done";
   if (!unlocked) cls += " locked";
   if (staged) cls += baseDone ? " staged-remove" : " staged-add";
+  const isCurrent = !done && currentSet.has(materia.c);
+  if (isCurrent) cls += " current";
   const medal = medalHtml(materia.c, new Set(userData.earned || []), !!userData.verifiedAt);
   if (medal) cls += " has-medal";
   card.className = cls;
@@ -645,7 +654,7 @@ function buildCard(materia) {
     <div class="sello">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"></path></svg>
     </div>
-    <span class="clave mono">${materia.c}</span>
+    <span class="clave mono">${materia.c}${isCurrent ? '<i class="cur-tag">En curso</i>' : ""}</span>
     <span class="nombre">${materia.n}</span>
     <span class="meta"><span>${materia.hp > 0 ? "Teórico-práctico" : "Teórico"}</span><span class="cr">${materia.cr} CR</span></span>
   `;
@@ -742,6 +751,7 @@ function renderGraph() {
     effSet,
     baseSet: doneSet,
     staged: selectMode ? stagedFlips : new Set(),
+    current: currentSet,
     manual: selectMode,
     matches: (m) => subjectMatchesSearch(m) && (activeFilter === "electivas" || subjectMatchesFilter(m)),
     prereqsOf: getPrereqCodes,
@@ -785,8 +795,10 @@ function showSubjectDetail(materia) {
   const unlocks = all.filter(x => x.c !== "ELECTIVA" && !x.reqLabel && getPrereqCodes(x).includes(materia.c));
   const where = findMateria(materia.c);
 
+  const isCurrent = !done && currentSet.has(materia.c);
   const status = done
     ? '<span class="pill pill-done">Aprobada</span>'
+    : isCurrent ? '<span class="pill pill-current">En curso</span>'
     : unlocked ? '<span class="pill pill-open">Disponible para cursar</span>'
     : '<span class="pill pill-lock">Bloqueada</span>';
 
@@ -823,6 +835,7 @@ function showSubjectDetail(materia) {
       <span>${materia.ht} HT · ${materia.hp} HP</span>
       <span>${where && where.cuat ? `Cuatrimestre ${where.cuat}` : "Electiva"}</span>
     </div>
+    ${done || materia.c === "ELECTIVA" ? "" : `<div class="detail-cur"><button type="button" class="btn ${isCurrent ? "btn-ghost" : "btn-primary"} btn-sm" data-toggle-current="${materia.c}">${isCurrent ? "Quitar de «en curso»" : "Marcar como en curso"}</button><span>${isCurrent ? "La estás cursando este cuatrimestre." : "¿La estás cursando ahora? Márcala para tenerla a la vista."}</span></div>`}
     <div class="detail-sec"><div class="detail-title">Requisitos</div>${reqHtml}${bloqueNote}${coreq}</div>
     <div class="detail-sec"><div class="detail-title">Desbloquea</div>
       ${unlocks.length
@@ -840,11 +853,33 @@ function initDetail() {
     const sheet = document.getElementById("detail-sheet");
     if (!sheet || !sheet.classList.contains("show")) return;
     if (e.target.closest("[data-close-detail]")) { sheet.classList.remove("show"); return; }
+    const tc = e.target.closest("[data-toggle-current]");
+    if (tc) { toggleCurrent(tc.dataset.toggleCurrent); return; }
     if (!sheet.contains(e.target) && !e.target.closest(".subject-card, .mg-node")) sheet.classList.remove("show");
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") document.getElementById("detail-sheet")?.classList.remove("show");
   });
+}
+
+/* ---------- En curso ---------- */
+async function setCurrent(codes, { quiet = false } = {}) {
+  const prev = new Set(currentSet);
+  currentSet = new Set(codes.filter(c => !doneSet.has(c)));
+  userData.current = [...currentSet];
+  render();
+  try { await saveUser({ current: userData.current }); return true; }
+  catch { currentSet = prev; userData.current = [...prev]; render(); if (!quiet) showToast("No se pudo guardar. Revisa tu conexión."); return false; }
+}
+async function toggleCurrent(code) {
+  const on = !currentSet.has(code);
+  const next = new Set(currentSet);
+  if (on) next.add(code); else next.delete(code);
+  if (await setCurrent([...next])) {
+    showToast(on ? "Marcada como en curso ✓" : "Quitada de «en curso»");
+    const f = findMateria(code);
+    if (f) showSubjectDetail(f.m);
+  }
 }
 
 /* ---------- Impresión ---------- */
@@ -889,6 +924,7 @@ function renderPrintSheet() {
   el.innerHTML = buildPrintSheet({
     pensum,
     done: doneSet,
+    current: currentSet,
     isUnlocked: (m) => isUnlockedIn(m, doneSet),
     prereqsOf: getPrereqCodes,
     name: userData?.name || "",
@@ -962,7 +998,7 @@ function renderCards() {
   // "¿Qué sigue?": materias pendientes cuyos requisitos ya están cumplidos
   if (activeFilter === "all" && !searchTerm && !selectMode) {
     const ready = pensum.cuatrimestres.flatMap(c => c.materias)
-      .filter(m => m.c !== "ELECTIVA" && !doneSet.has(m.c) && isUnlockedIn(m, doneSet));
+      .filter(m => m.c !== "ELECTIVA" && !doneSet.has(m.c) && !currentSet.has(m.c) && isUnlockedIn(m, doneSet)); // las que ya cursas no se repiten aquí
     if (ready.length) {
       const sec = document.createElement("section");
       sec.className = "next-up";

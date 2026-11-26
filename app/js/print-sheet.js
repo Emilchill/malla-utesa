@@ -29,7 +29,7 @@ const f1 = (n) => Number(n.toFixed(2));
  * @param {object} o.stats       { pct, creditosHechos, totalCreditos, doneCount, totalCount }
  * @returns {string} HTML de la hoja
  */
-export function buildPrintSheet({ pensum, done, isUnlocked, prereqsOf, name, stats }) {
+export function buildPrintSheet({ pensum, done, current, isUnlocked, prereqsOf, name, stats }) {
   const cuats = pensum.cuatrimestres;
   const cols = cuats.length;
   const rows = Math.max(1, ...cuats.map(c => c.materias.length));
@@ -78,7 +78,7 @@ export function buildPrintSheet({ pensum, done, isUnlocked, prereqsOf, name, sta
   // posición de cada materia en la rejilla
   const at = new Map();
   cuats.forEach((c, ci) => c.materias.forEach((m, ri) => { if (m.c !== "ELECTIVA") at.set(m.c, { ci, ri }); }));
-  const state = (m) => (m.c === "ELECTIVA" ? "slot" : done.has(m.c) ? "done" : isUnlocked(m) ? "open" : "lock");
+  const state = (m) => (m.c === "ELECTIVA" ? "slot" : done.has(m.c) ? "done" : current && current.has(m.c) ? "current" : isUnlocked(m) ? "open" : "lock");
 
   /* ---- flechas (prerrequisito en el cuatrimestre anterior) y números (prerrequisitos más atrás) ---- */
   const paths = [];
@@ -170,6 +170,7 @@ export function buildPrintSheet({ pensum, done, isUnlocked, prereqsOf, name, sta
     </div>
     <div class="ps-status">
       <span><i class="ps-sw st-done">✓</i>Aprobada</span>
+      <span><i class="ps-sw st-current">▶</i>En curso</span>
       <span><i class="ps-sw st-open"></i>Disponible para cursar</span>
       <span><i class="ps-sw st-lock"></i>Bloqueada</span>
     </div>

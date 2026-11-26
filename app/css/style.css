@@ -2422,3 +2422,22 @@ body.ps-preview .print-sheet { display: block; margin: 12px auto; box-shadow: 0 
   .dlg-box { max-width: none; border-radius: 20px 20px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
   .dlg-actions .btn { flex: 1; }
 }
+
+/* ============================================================
+   «En curso»: materias que se están cursando este cuatrimestre (azul, distinto de aprobada/disponible)
+   ============================================================ */
+:root { --cur: #2F6FB0; --cur-soft: #E4EEF9; }
+[data-theme="medianoche"], [data-theme="violeta"] { --cur: #6FA8E8; --cur-soft: color-mix(in srgb, #6FA8E8 18%, var(--card)); }
+.subject-card.current { border: 2px solid var(--cur); background: var(--cur-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cur) 16%, transparent); }
+.subject-card.current .clave { color: var(--cur); }
+.cur-tag { margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--cur); color: #fff; font: 700 9.5px Inter, sans-serif; font-style: normal; letter-spacing: .03em; vertical-align: 1px; }
+.pill-current { background: var(--cur-soft); color: var(--cur); border: 1px solid color-mix(in srgb, var(--cur) 40%, transparent); }
+.detail-cur { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 2px; padding: 10px 12px; border-radius: 12px; background: var(--cur-soft); }
+.detail-cur span { font-size: 12.5px; color: var(--muted); flex: 1 1 160px; }
+.mg-node.st-current { border: 2px solid var(--cur); background: var(--cur-soft); box-shadow: inset 4px 0 0 var(--cur), 0 0 0 3px color-mix(in srgb, var(--cur) 18%, transparent); }
+.mg-node.st-current .mg-code, .mg-node.st-current .mg-cr { color: var(--cur); }
+.lg-current { background: var(--cur-soft); border: 1.5px solid var(--cur); box-shadow: inset 3px 0 0 var(--cur); }
+.ps-box.st-current { background: #DCE9F8; border: .5mm solid #2F6FB0; }
+.ps-box.st-current .ps-cells { background: #BCD4EF; }
+.ps-sw.st-current { background: #DCE9F8; border-color: #2F6FB0; border-width: .5mm; color: #2F6FB0; font-size: 4pt; }
+@media print { .mg-node.st-current { box-shadow: inset 0.8mm 0 0 var(--cur) !important; } }

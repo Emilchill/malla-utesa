@@ -36,6 +36,11 @@ globalThis.fetch = async (u) => {
     const rows = allIsc.filter(c => !approved.has(c)).map(c => `<tr><td>${(globalThis.__fmt || ((x) => x))(c)}</td><td>x</td></tr>`).join("");
     return html(`<input id="txtNombrecar" value="${globalThis.__carrera ?? "Ing"}"><input id="txtPensum" value="2023"><table><tr><th>Cód. Asig.</th><th>Nombre</th></tr>${rows}</table>`);
   }
+  // página Calificaciones: dos en curso (NF vacía) y una con nota final (ya no cuenta como en curso)
+  if (u.includes("/calificaciones.aspx")) return html(`<input id="txtNombrecar" value="Ing"><table><tr><th>#</th><th>Cód. Asig.</th><th>Nombre</th><th>CR</th><th>Per. 1</th><th>Per 2.</th><th>NF</th><th></th><th>EQ</th></tr>
+    <tr><td>1</td><td>INF-440-003</td><td>Arquitectura</td><td>1</td><td>80</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>2</td><td>MAT-360-004</td><td>Cálculo IV</td><td>4</td><td>75</td><td></td><td>&nbsp;</td><td></td><td></td></tr>
+    <tr><td>3</td><td>SOC-502-002</td><td>Ciudadanía</td><td>2</td><td>90</td><td>88</td><td>89</td><td></td><td></td></tr></table>`);
   return html('<input id="txtCanAprob" value="6">');
 };
 const b = (o) => Buffer.from(typeof o === "string" ? o : JSON.stringify(o)).toString("base64url");

@@ -35,6 +35,7 @@ let ctx = null;
 let lastCounts = null;
 let lastPending = null;      // lista de pendientes del último análisis
 let lastFromBookmark = false; // ¿vino del marcador? (el inicio directo ya lo verifica el servidor)
+let lastCurrent = null;       // materias en curso del último análisis (null = no vinieron: se respeta lo marcado a mano)
 
 /* ---------- Utilidades ---------- */
 function norm(str) {
@@ -118,6 +119,9 @@ export function analyzePayload(text, pensum) {
       if (c) pending.add(c);
     });
     if (!pending.size) return { modo, found: [], foreign: [], error: "No encontramos la lista de pendientes en esa página." };
+    // en curso (marcador nuevo / inicio directo): solo claves del pensum; si no vienen, se respeta lo marcado a mano
+    const hasCurrent = meta.CURSO !== undefined || rows.some(r => r[0] === "C");
+    const current = hasCurrent ? [...new Set(rows.filter(r => r[0] === "C" && r[1]).map(r => normCode(r[1])).filter(c => c && byCode.has(c)))] : null;
 
     const known = [...pending].filter(c => byCode.has(c));
     [...pending].filter(c => !byCode.has(c)).forEach(c => foreign.add(c));
@@ -143,7 +147,7 @@ export function analyzePayload(text, pensum) {
     if (counts.aprob != null && counts.aprob !== found.size) {
       note += ` <span class="imp-warn">UTESA reporta ${counts.aprob} aprobadas y aquí se detectaron ${found.size}: revisa la lista.</span>`;
     }
-    return { modo, found: [...found.values()], foreign: [...foreign], careerWarn, note, counts, pending: [...pending] };
+    return { modo, found: [...found.values()], foreign: [...foreign], careerWarn, note, counts, pending: [...pending], current };
   }
 
   return {
@@ -158,6 +162,7 @@ export function analyzePayload(text, pensum) {
 // dos páginas internas con la sesión que el estudiante ya abrió:
 //   asignaturas-pendientes.aspx → avance (pensum − pendientes)
 //   resumen.aspx                → contadores de aprobadas / inscritas / pendientes (verificación)
+//   calificaciones.aspx         → materias EN CURSO (la tabla que pagina-calificaciones.aspx carga aparte) (filas sin nota final; las notas no se leen ni se envían)
 function bookmarkletBody(appUrl, hashKey, metaPrefix) {
   if (!/(^|\.)utesa\.edu$/.test(location.hostname)) {
     alert("Usa este marcador estando dentro del portal de UTESA (Acceso → Estudiantes).");
@@ -174,8 +179,8 @@ function bookmarkletBody(appUrl, hashKey, metaPrefix) {
       return fetch(base + p, { credentials: "include" }).then(function (r) { return r.text(); })
         .then(function (t) { return { t: t, d: new DOMParser().parseFromString(t, "text/html") }; });
     };
-    Promise.all([get("asignaturas-pendientes.aspx"), get("resumen.aspx")]).then(function (res) {
-      var pen = res[0], resu = res[1];
+    Promise.all([get("asignaturas-pendientes.aspx"), get("resumen.aspx"), get("calificaciones.aspx").catch(function () { return null; })]).then(function (res) {
+      var pen = res[0], resu = res[1], cal = res[2];
       var lines = [];
       pen.d.querySelectorAll("table").forEach(function (t) {
         var head = t.rows[0]; if (!head) return;
@@ -188,10 +193,23 @@ function bookmarkletBody(appUrl, hashKey, metaPrefix) {
         });
       });
       if (!lines.length) { alert("No se pudo leer tu lista de pendientes. ¿Tu sesión de UTESA sigue abierta?"); return; }
+      var cur = 0;
+      if (cal) cal.d.querySelectorAll("table").forEach(function (t) {
+        var head = t.rows[0]; if (!head) return;
+        var cells = [].slice.call(head.cells).map(function (c) { return (c.textContent || "").replace(/\s+/g, " ").trim(); });
+        var ci = cells.findIndex(function (c) { return /c[óo]d/i.test(c); });
+        var nf = cells.findIndex(function (c) { return /^NF$/i.test(c); });
+        if (ci === -1 || nf === -1) return;
+        [].slice.call(t.rows, 1).forEach(function (r) {
+          var m = (r.cells[ci] && r.cells[ci].textContent || "").toUpperCase().match(/[A-Z]{2,4}-?\d{3}/);
+          var hasFinal = (r.cells[nf] && r.cells[nf].textContent || "").trim() !== "";
+          if (m && !hasFinal) { lines.push("C\t" + m[0]); cur++; }
+        });
+      });
       var v = function (d, id) { var e = d.getElementById(id); return e ? String(e.value || "").trim() : ""; };
       var meta = metaPrefix + "MODO=sync" +
         "|CARRERA=" + v(pen.d, "txtNombrecar") + "|PENSUM=" + v(pen.d, "txtPensum") +
-        "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens");
+        "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens") + (cal ? "|CURSO=" + cur : "");
       send(meta, lines);
     }).catch(function () { alert("No se pudo leer el portal. Recarga la página de UTESA e inténtalo de nuevo."); });
     return;
@@ -242,6 +260,7 @@ function analyze(text) {
   list.innerHTML = "";
   lastCounts = res.counts || null;
   lastPending = res.pending || null;
+  lastCurrent = Array.isArray(res.current) ? res.current : null;
 
   if (res.error || !res.found.length) {
     summary.innerHTML = res.error
@@ -260,7 +279,10 @@ function analyze(text) {
   summary.innerHTML = `Encontramos <strong>${res.found.length}</strong> materia${res.found.length === 1 ? "" : "s"} aprobada${res.found.length === 1 ? "" : "s"} o por revisar
     (${nuevos.length} nueva${nuevos.length === 1 ? "" : "s"}, ${ya.length} ya marcada${ya.length === 1 ? "" : "s"}).
     ${res.note ? `<br><span class="muted">${res.note}</span>` : ""}
-    <br><span class="muted">Revisa la lista antes de confirmar. Las que parecen reprobadas o en curso vienen desmarcadas.</span>${careerWarn}`;
+    <br><span class="muted">Revisa la lista antes de confirmar. Las que parecen reprobadas o en curso vienen desmarcadas.</span>${careerWarn}
+    ${Array.isArray(res.current)
+      ? `<br><span class="imp-cur">▶ En curso: <strong>${res.current.length}</strong> materia${res.current.length === 1 ? "" : "s"}${res.current.length ? ` (${esc(res.current.join(", "))})` : ""}. Se resaltarán en tu malla.</span>`
+      : lastFromBookmark ? `<br><span class="imp-warn">Tu marcador es de una versión anterior y no trae las materias en curso. Vuelve a guardarlo desde esta ventana.</span>` : ""}`;
 
   const ordered = [...nuevos, ...ya];
   list.innerHTML = ordered.map(f => {
@@ -335,7 +357,8 @@ function initQuickLogin() {
       if (data.verified && ctx.onVerified) ctx.onVerified(data.verified);
       const c = data.counts || {};
       const meta = `${META_PREFIX}MODO=sync|CARRERA=${data.carrera || ""}|PENSUM=${data.pensum || ""}|APROB=${c.aprob ?? ""}|INSC=${c.insc ?? ""}|PEND=${c.pend ?? ""}`;
-      analyze(meta + "\n" + (data.pending || []).map(code => "P\t" + code).join("\n"));
+      const curLines = Array.isArray(data.current) ? data.current.map(code => "C\t" + code) : [];
+      analyze(meta + (Array.isArray(data.current) ? `|CURSO=${data.current.length}` : "") + "\n" + [...(data.pending || []).map(code => "P\t" + code), ...curLines].join("\n"));
       mat.value = "";
     } catch {
       showErr("No hay conexión con el servidor. Revisa tu internet o usa el marcador.");
@@ -382,8 +405,9 @@ export function initUtesaImport(context) {
     $("utesa-paste").value = "";
     // con datos llegados por enlace (#utesa=), solo se verifica si la persona confirma que salieron de SU marcador
     const counts = lastCounts, pending = lastPending, viaBookmark = lastFromBookmark && !!$("utesa-verify-chk")?.checked;
-    lastCounts = null; lastPending = null; lastFromBookmark = false;
-    await ctx.onApply(codes, { counts });
+    const current = lastCurrent;
+    lastCounts = null; lastPending = null; lastFromBookmark = false; lastCurrent = null;
+    await ctx.onApply(codes, { counts, ...(current ? { current } : {}) });
     if (viaBookmark && pending && pending.length) verifyWithBookmark(pending, counts); // el marcador también verifica (con controles en el servidor)
   });
 

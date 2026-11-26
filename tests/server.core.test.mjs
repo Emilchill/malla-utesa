@@ -10,6 +10,8 @@ r = await call("PUT", "/api/user", tok("ana"), { fields: { frame: "MAT-360" } })
 ok("equipar sin verificar -> 403", r[0] === 403, r);
 
 r = await call("POST", "/api/utesa-login", tok("ana"), { matricula: "1000000", recinto: "UTSAN", password: "x" }, "2.2.2.2");
+ok("inicio directo: trae las materias en curso (sin sección y solo las que no tienen nota final)", r[0] === 200 && JSON.stringify(r[1].current) === JSON.stringify(["INF-440", "MAT-360"]), r[1].current);
+ok("inicio directo: nunca devuelve notas", !JSON.stringify(r[1]).includes('"89"') && !/Per. 1|"NF"/.test(JSON.stringify(r[1])), r[1]);
 ok("login directo verifica y da logros", r[0] === 200 && r[1].verified && r[1].verified.earned.includes("MAT-360") && r[1].verified.earned.includes("INF-164"), r);
 ok("no desbloquea lo pendiente", !r[1].verified.earned.includes("INF-502") && !r[1].verified.earned.includes("DPG-020"), r[1].verified && r[1].verified.earned);
 ok("no cuenta materias de DER para ISC", !r[1].verified.earned.some(c => c.startsWith("DER")), r[1].verified && r[1].verified.earned);
