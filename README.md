@@ -147,7 +147,7 @@ con tu coordinación de carrera**. Los errores se pueden reportar desde la propi
 ## Licencia
 
 El código está bajo licencia **MIT** (ver [`LICENSE`](LICENSE)). La licencia no cubre el nombre ni las marcas de UTESA, ni el
-contenido de los pénsums, que pertenecen a la universidad.
+contenido de los pénsums, que pertenecen a la universidad (ver [`NOTICE.md`](NOTICE.md)).
 
 **Autor:** Emil Enmanuel Mercedes Francisco · Ingeniería en Sistemas Computacionales.
 Reportes y sugerencias: botón de contacto dentro de la app · Fallos de seguridad: **Security → Report a vulnerability**.
