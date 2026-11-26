@@ -1,95 +1,147 @@
-# Malla UTESA
+<p align="center">
+  <img src="docs/img/hero.svg" alt="Malla UTESA: tu malla curricular con tu progreso real" width="100%">
+</p>
 
-> **Proyecto estudiantil independiente. NO es un sitio oficial de UTESA ni está afiliado a la universidad.**
-> Hecho por y para estudiantes. Los datos del pénsum pueden tener errores: confirma siempre tu avance real con tu coordinación de carrera.
+<p align="center">
+  <a href="https://malla-utesa.pages.dev"><img alt="Sitio en producción" src="https://img.shields.io/badge/producción-malla--utesa.pages.dev-00542B?style=for-the-badge"></a>
+  <img alt="Cloudflare Pages + Workers + D1" src="https://img.shields.io/badge/Cloudflare-Pages%20·%20Workers%20·%20D1-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
+  <img alt="Sin dependencias" src="https://img.shields.io/badge/dependencias-0-2F6FB0?style=for-the-badge">
+  <img alt="Pruebas" src="https://img.shields.io/badge/pruebas-420%2B%20en%20verde-1E7A44?style=for-the-badge">
+</p>
 
-Sitio en producción: **https://malla-utesa.pages.dev**
+<p align="center">
+  <b>Malla curricular interactiva para estudiantes de UTESA</b> · 18 carreras · pénsum 2023<br>
+  <sub>Proyecto estudiantil independiente. <b>No es un sitio oficial de UTESA</b> ni está afiliado a la universidad.</sub>
+</p>
 
-Malla UTESA es una aplicación web para que los estudiantes de UTESA lleven su **malla curricular** cuatrimestre a cuatrimestre
-(18 carreras, pénsum 2023) y, además, formen una **comunidad**: logros y marcos para el avatar, chat por carrera, amigos,
-chats privados, grupos y moderación.
+---
 
-## Qué incluye
+## Qué es
 
-| Área | Resumen |
+**Malla UTESA** muestra la malla curricular de cada estudiante **con su progreso real**: qué materias aprobó, cuáles cursa ahora,
+cuáles puede inscribir y cuáles siguen bloqueadas por requisitos. El avance se marca a mano o se trae del portal de UTESA
+con un clic, y alrededor hay una comunidad moderada para estudiar juntos.
+
+| | |
 |---|---|
-| **Malla y avance** | Malla interactiva con ruta de requisitos, tarjetas, gráficos, porcentaje de avance, modo manual o vinculación con UTESA. |
-| **Vincular con UTESA** | Inicio de sesión directo (matrícula + contraseña, procesada solo en memoria) o **marcador** (bookmarklet). Verifica el avance y desbloquea logros. |
-| **Personaje y temas** | Creador de personajes SVG (34 estilos de ropa, temporada navideña, extras), 6 temas de color. |
-| **Logros y marcos** | 368 logros (uno por materia clave), marcos animados únicos para el avatar y rangos por % de carrera. |
-| **Comunidad** | Chat General y por carrera, estudiantes y amigos, chat privado, grupos con administradores propios, "en línea", avisos y silenciar chats. |
-| **Moderación** | Dueño y moderadores, filtro de malas palabras, reportes, vaciar chats, eliminar usuarios, marcos y artículos exclusivos del equipo. |
+| 🗺️ **Malla interactiva** | Mapa por cuatrimestres con la ruta de requisitos, zoom, tarjetas y filtros (aprobadas, pendientes, **en curso**, electivas). |
+| 🔗 **Vinculación con UTESA** | Inicio de sesión directo o **marcador**: trae pendientes, inscritas y contadores. La contraseña solo vive en memoria. |
+| 📊 **Gráficos y proyección** | Avance por cuatrimestre, ritmo frente al plan y cuándo terminarías según los créditos que tomes (hasta el máximo de tu pénsum). |
+| 🖨️ **Hoja imprimible** | Una página carta con el formato clásico de malla (HT · HP · TH · CR, flechas de requisitos) coloreada con tu avance. |
+| 🎨 **Personaje y temas** | Creador de avatares en SVG (22 cortes, 12 estilos de barba, ropa de temporada…), marcos por logros y 6 temas. |
+| 💬 **Comunidad** | Chat general y por carrera, amigos, chats privados y grupos con sus propios administradores. |
+| 🛡️ **Moderación** | Panel del equipo: cuentas, reportes, suspensiones por tiempo, reinicio de cuentas, eliminadas reactivables y registro. |
 
-El detalle completo está en [`docs/FEATURES.md`](docs/FEATURES.md).
+## Cómo funciona
 
-## Pruébalo en tu computador (2 minutos)
+> Los diagramas son SVG animados en bucle (se generan con `node tools/build-diagrams.mjs`).
 
-Necesitas **Node.js 22.5 o superior** (recomendado 24; ver `.nvmrc`). No hay que instalar nada más: el proyecto no tiene dependencias.
+### Arquitectura
+
+<p align="center"><img src="docs/img/arquitectura.svg" alt="Diagrama de arquitectura: estudiante, Cloudflare Pages, Worker, D1, Firebase y portal de UTESA" width="100%"></p>
+
+* **Sitio estático** en Cloudflare Pages: HTML, CSS y JavaScript nativo (módulos ES), sin paso de build.
+* **API** en un único Worker (`app/_worker.js`, sin dependencias): verifica el token de Firebase (RS256), aplica permisos, límites y moderación.
+* **D1** (SQLite) guarda perfiles, avance, chat y moderación. **Firebase** se usa solo para iniciar sesión y para avisos en vivo sin contenido.
+* El **portal de UTESA** solo se lee, y únicamente cuando el estudiante lo pide.
+
+### Vinculación con UTESA
+
+<p align="center"><img src="docs/img/vinculacion.svg" alt="Diagrama de secuencia de la vinculación con UTESA" width="100%"></p>
+
+El avance se calcula como **pénsum − asignaturas pendientes**; las **inscritas** se marcan como *en curso*.
+El estudiante revisa la lista antes de guardar. Con el **marcador**, todo ocurre en su propio navegador y no pasa ninguna contraseña por el servidor.
+
+### Estados de una materia
+
+<p align="center"><img src="docs/img/estados-materia.svg" alt="Diagrama de estados de una materia" width="100%"></p>
+
+### Modelo de datos
+
+<p align="center"><img src="docs/img/modelo-datos.svg" alt="Diagrama de clases del modelo de datos en D1" width="100%"></p>
+
+Nunca se expone el `uid` de Firebase ni el correo de nadie: entre usuarios todo viaja con un **id público** (`pid`).
+
+### Moderación
+
+<p align="center"><img src="docs/img/moderacion.svg" alt="Diagrama de actividad de la moderación" width="100%"></p>
+
+## Tecnología
+
+| Capa | Tecnología | Por qué |
+|---|---|---|
+| Interfaz | HTML + CSS + JavaScript nativo | Sin build ni dependencias: carga rápido y cualquiera puede leer el código. |
+| API | Cloudflare Worker (un archivo) | Gratis, global y con el mismo dominio que el sitio. |
+| Datos | Cloudflare D1 (SQLite) | Consultas SQL atómicas (límites y topes sin condiciones de carrera). |
+| Identidad | Firebase Auth | Inicio de sesión con correo o Google; el servidor verifica cada token. |
+| Tiempo real | Firestore (solo «avisos») | Los mensajes viven en D1; Firestore solo avisa que hay algo nuevo. |
+| Despliegue | GitHub → Cloudflare Pages | Cada merge a `main` se publica solo; cache-busting por commit. |
+
+## Pruébalo en tu computador
+
+Necesitas **Node.js 22.5 o superior** (recomendado 24). No hay nada que instalar: el proyecto no tiene dependencias.
 
 ```bash
 git clone <URL-de-este-repositorio>
 cd malla-utesa
-npm run dev        # http://localhost:5190  (elige usuario en /dev.html)
-npm test           # pruebas del servidor
+npm run dev        # http://localhost:5190 — elige un usuario de prueba en /dev.html
+npm test           # 8 suites, más de 420 comprobaciones
 npm run check      # sintaxis de todo el JavaScript + escaneo de secretos
 ```
 
-`npm run dev` levanta la app completa **sin Cloudflare, Firebase ni cuentas**: usa el servidor real (`app/_worker.js`) con una
-base SQLite en memoria, Firebase simulado y un portal de UTESA falso. Detalles en [`docs/TESTING.md`](docs/TESTING.md).
+`npm run dev` levanta la app completa **sin Cloudflare, Firebase ni cuentas**: corre el Worker real contra SQLite en memoria,
+con Firebase simulado y un portal de UTESA falso. Detalles en [`docs/TESTING.md`](docs/TESTING.md).
 
-## Cómo está organizado
+## Calidad y seguridad
 
-```
-app/                  ← LO QUE SE PUBLICA (Cloudflare Pages). Todo lo demás no sale a Internet.
-  _worker.js          API completa (un solo archivo, sin dependencias) + sirve los archivos estáticos
-  _routes.json        el worker solo se ejecuta en /api/*; lo demás lo sirve Cloudflare gratis
-  index.html …        páginas (login, perfil, panel, chat, restablecer contraseña, cuenta eliminada)
-  js/ css/ assets/    módulos ES nativos (sin build), estilos y pénsums en PDF
-docs/                 documentación (arquitectura, API, datos, despliegue, privacidad, hoja de ruta…)
-tests/                pruebas del servidor (corren contra el worker real, sin Cloudflare)
-tools/                herramientas: servidor de desarrollo, regenerar datos del worker, revisión de sintaxis
-firebase/             reglas de Firestore (se publican a mano en la consola de Firebase)
-legacy/netlify/       respaldo antiguo en Netlify (no se usa en producción)
-.github/              CI, despliegue automático y plantillas de issues y PR
-AGENTS.md             guía para IAs (léela antes de pedirle cambios a un asistente)
-```
+* **Pruebas automáticas** contra el Worker real: permisos, límites, moderación, vinculación, filtro de lenguaje, cabeceras,
+  compatibilidad de avatares (más de 12 000 combinaciones) y la hoja impresa para las 18 carreras.
+* **CI** en cada Pull Request (`check-and-test`).
+* **Auditorías de seguridad** periódicas; cabeceras estrictas (CSP completa, `X-Frame-Options`, `nosniff`).
+* **Privacidad por diseño:** la contraseña de UTESA nunca se guarda; de las páginas del portal solo se toman las claves de materias;
+  sin `uid` ni correos entre usuarios. Ver [`docs/PRIVACY-AND-DATA.md`](docs/PRIVACY-AND-DATA.md) y [`SECURITY.md`](SECURITY.md).
 
-## Flujo de trabajo: GitHub es donde se trabaja
+## Estructura
 
 ```
- rama / fork ──► Pull Request ──► CI (revisión + pruebas) ──► merge a main ──► despliegue automático a Cloudflare Pages
+app/                  lo único que se publica (Cloudflare Pages)
+  _worker.js          API completa: un solo archivo, sin dependencias
+  *.html  js/  css/   páginas y módulos ES nativos (sin build)
+docs/                 arquitectura, API, datos, despliegue, privacidad, hoja de ruta + diagramas (docs/img)
+tests/                pruebas del servidor contra el Worker real
+tools/                servidor de desarrollo, generación de datos y de diagramas, revisión de secretos
+firebase/             reglas de Firestore
 ```
 
-* **`main` = producción.** Cada merge a `main` publica en https://malla-utesa.pages.dev (mismo proyecto, mismo dominio).
-* Los cambios se hacen en ramas y entran por **Pull Request**; el CI debe pasar en verde.
-* Guía paso a paso en [`CONTRIBUTING.md`](CONTRIBUTING.md). El despliegue está explicado en [`docs/DEPLOY.md`](docs/DEPLOY.md).
+## Flujo de trabajo
 
-## Trabajar con IAs (Claude, ChatGPT, Copilot…)
+```
+ rama ──► Pull Request ──► CI (revisión + pruebas) ──► merge a main ──► despliegue automático
+```
 
-Este repositorio está pensado para que una IA pueda ayudarte sin romper nada:
-
-1. Pásale **`AGENTS.md`** (o déjala leerlo; Claude Code lo carga solo vía `CLAUDE.md`). Resume la arquitectura, los comandos y las reglas.
-2. Pídele cambios pequeños y claros. Plantillas de instrucciones en [`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md).
-3. Antes de aceptar su trabajo: `npm run check && npm test`, y pruébalo con `npm run dev`.
+Guía para colaborar en [`CONTRIBUTING.md`](CONTRIBUTING.md). Si trabajas con una IA, pásale [`AGENTS.md`](AGENTS.md)
+(plantillas en [`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md)).
 
 ## Documentación
 
-| Documento | Para qué sirve |
+| Documento | Contenido |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | Reglas y mapa del proyecto para IAs |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Cómo colaborar (ramas, PR, estilo) |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Cómo funciona por dentro |
 | [`docs/API.md`](docs/API.md) | Todas las rutas de `/api/*` |
-| [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) | Tablas de D1, documentos de Firestore, salas del chat |
-| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cloudflare Pages conectado a GitHub, build, reversa |
-| [`docs/TESTING.md`](docs/TESTING.md) | Pruebas y entorno local |
+| [`docs/DATA-MODEL.md`](docs/DATA-MODEL.md) | Tablas de D1, Firestore y salas del chat |
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Qué hace la app, función por función |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Cloudflare Pages conectado a GitHub, build y reversa |
+| [`docs/TESTING.md`](docs/TESTING.md) | Pruebas y entorno local |
 | [`docs/PRIVACY-AND-DATA.md`](docs/PRIVACY-AND-DATA.md) | Qué datos se guardan y riesgos conocidos |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ideas, deuda técnica y trabajo pendiente |
-| [`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md) | Cómo pedirle cosas a una IA |
-| [`docs/CHANGELOG-FEATURES.md`](docs/CHANGELOG-FEATURES.md) | Historia de decisiones y funciones (bitácora original) |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ideas y trabajo pendiente |
+| [`docs/CHANGELOG-FEATURES.md`](docs/CHANGELOG-FEATURES.md) | Historia de funciones y decisiones |
 | [`SECURITY.md`](SECURITY.md) | Secretos, qué es público y cómo reportar fallos |
 
-## Contacto
+## Aviso
 
-Reportes, errores y sugerencias: WhatsApp +1 829 642 2334 (también hay un botón dentro de la app).
+Los datos de los pénsums se transcribieron de los documentos publicados por UTESA, en parte con ayuda de herramientas de
+inteligencia artificial, y se revisaron con comprobaciones automáticas. Pueden contener errores: **confirma siempre tu avance
+con tu coordinación de carrera**. Los errores se pueden reportar desde la propia app.
+
+**Autor:** Emil Enmanuel Mercedes Francisco · Ingeniería en Sistemas Computacionales.
+Reportes y sugerencias: botón de contacto dentro de la app.
