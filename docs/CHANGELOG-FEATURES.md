@@ -21,9 +21,8 @@ pénsum 2023 publicado y no están incluidas.
 
 * Se pueden marcar materias **en curso** desde el detalle de cada materia; salen resaltadas en azul en las tarjetas, el mapa
   y la hoja impresa, hay un filtro «En curso» y el panel muestra cuántas cursas. No cuentan como aprobadas.
-* El **marcador** y el **inicio de sesión directo** también leen la página *Calificaciones* del portal (`calificaciones.aspx`,
-  la tabla que carga `pagina-calificaciones.aspx`): toman solo la clave de las materias **sin nota final**. Las notas no se leen
-  ni se guardan. Los marcadores guardados antes no traen esta parte: hay que volver a guardarlo (la app lo avisa).
+* El **marcador** y el **inicio de sesión directo** también leen *Asignaturas inscritas* (`asignaturas-inscritas.aspx`, la tabla que carga `pagina-asignaturas-inscritas.aspx`): toman la clave de cada materia inscrita (columnas #, Cód. Asig., Nombre, CR, Horario, Aula; no tiene notas). Los marcadores guardados antes no traen esta parte: hay que volver a guardarlo (la app lo avisa).
+* **Gráficos → Proyección**: el límite de créditos por cuatrimestre llega hasta el cuatrimestre más cargado de tu pensum (ese es el máximo; ya no hay «sin límite»).
 
 ## Actualización de moderación (2026-11-22)
 

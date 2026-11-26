@@ -8,15 +8,14 @@
 
 const STD = /^[A-Z]{2,4}-\d{3}$/;
 const CAP_KEY = "malla_cap";
-const CAPS = [15, 18, 21, 24, 27, 30, null]; // créditos por cuatrimestre (null = sin límite)
+const CAPS = [12, 15, 18, 21, 24, 27, 30]; // opciones de créditos por cuatrimestre; nunca pasan del máximo del pensum
 
+// lo elegido se recuerda; null = usar el máximo del pensum (también si se había guardado «sin límite»)
 let cap = (() => {
   try {
-    const v = localStorage.getItem(CAP_KEY);
-    if (v === "none") return null;
-    const n = Number(v);
-    return CAPS.includes(n) ? n : 24;
-  } catch { return 24; }
+    const n = Number(localStorage.getItem(CAP_KEY));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch { return null; }
 })();
 
 function esc(str) {
@@ -257,14 +256,23 @@ function project(ctx, d, limit) {
   return { terms, stuck: left };
 }
 
+/** Máximo de créditos por cuatrimestre según el pensum: el cuatrimestre que más créditos tiene. */
+function pensumMaxCredits(pensum) {
+  return Math.max(1, ...pensum.cuatrimestres.map(c => c.materias.reduce((s, m) => s + (m.cr || 0), 0)));
+}
+
 function projectionHtml(ctx, d) {
-  const { terms, stuck } = project(ctx, d, cap);
+  // el límite nunca pasa del cuatrimestre más cargado del pensum (y ese es su máximo)
+  const maxCr = pensumMaxCredits(ctx.pensum);
+  const limit = cap == null || cap > maxCr ? maxCr : cap;
+  const options = [...CAPS.filter(v => v != null && v < maxCr), maxCr];
+  const { terms, stuck } = project(ctx, d, limit);
   const n = terms.length;
   const years = n / 3;
-  const capLabel = (v) => (v == null ? "Sin límite" : `${v} CR`);
+  const capLabel = (v) => (v === maxCr ? `${v} CR · máximo de tu pensum` : `${v} CR`);
   const head = n === 0
     ? "Ya no te queda ninguna materia por cursar."
-    : `Tomando ${cap == null ? "todo lo que puedas" : `hasta <strong>${cap} créditos</strong> por cuatrimestre`}, terminarías en <strong>${n} cuatrimestre${n === 1 ? "" : "s"}</strong> (≈ ${years.toFixed(1).replace(".0", "")} año${years === 1 ? "" : "s"}).`;
+    : `Tomando hasta <strong>${limit} créditos</strong> por cuatrimestre${limit === maxCr ? " (el máximo de tu pensum)" : ""}, terminarías en <strong>${n} cuatrimestre${n === 1 ? "" : "s"}</strong> (≈ ${years.toFixed(1).replace(".0", "")} año${years === 1 ? "" : "s"}).`;
 
   const maxLoad = Math.max(10, ...terms.map(t => t.load));
   const cols = terms.map((t, i) => `
@@ -282,7 +290,7 @@ function projectionHtml(ctx, d) {
     <div class="ch-head">
       <h3>Proyección para terminar</h3>
       <label class="ch-cap">Créditos por cuatrimestre
-        <select id="ch-cap" class="input">${CAPS.map(v => `<option value="${v == null ? "none" : v}"${v === cap ? " selected" : ""}>${capLabel(v)}</option>`).join("")}</select>
+        <select id="ch-cap" class="input">${options.map(v => `<option value="${v}"${v === limit ? " selected" : ""}>${capLabel(v)}</option>`).join("")}</select>
       </label>
     </div>
     <p class="ch-read">${head}</p>
@@ -323,7 +331,7 @@ export function renderCharts(container, ctx) {
 
   const sel = container.querySelector("#ch-cap");
   sel?.addEventListener("change", () => {
-    cap = sel.value === "none" ? null : Number(sel.value);
+    cap = Number(sel.value); // el máximo del pensum ya viene limitado en las opciones
     try { localStorage.setItem(CAP_KEY, sel.value); } catch {}
     renderCharts(container, ctx);
   });

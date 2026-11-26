@@ -162,7 +162,7 @@ export function analyzePayload(text, pensum) {
 // dos páginas internas con la sesión que el estudiante ya abrió:
 //   asignaturas-pendientes.aspx → avance (pensum − pendientes)
 //   resumen.aspx                → contadores de aprobadas / inscritas / pendientes (verificación)
-//   calificaciones.aspx         → materias EN CURSO (la tabla que pagina-calificaciones.aspx carga aparte) (filas sin nota final; las notas no se leen ni se envían)
+//   asignaturas-inscritas.aspx  → materias EN CURSO (la tabla que pagina-asignaturas-inscritas.aspx carga aparte; no tiene notas)
 function bookmarkletBody(appUrl, hashKey, metaPrefix) {
   if (!/(^|\.)utesa\.edu$/.test(location.hostname)) {
     alert("Usa este marcador estando dentro del portal de UTESA (Acceso → Estudiantes).");
@@ -179,8 +179,8 @@ function bookmarkletBody(appUrl, hashKey, metaPrefix) {
       return fetch(base + p, { credentials: "include" }).then(function (r) { return r.text(); })
         .then(function (t) { return { t: t, d: new DOMParser().parseFromString(t, "text/html") }; });
     };
-    Promise.all([get("asignaturas-pendientes.aspx"), get("resumen.aspx"), get("calificaciones.aspx").catch(function () { return null; })]).then(function (res) {
-      var pen = res[0], resu = res[1], cal = res[2];
+    Promise.all([get("asignaturas-pendientes.aspx"), get("resumen.aspx"), get("asignaturas-inscritas.aspx").catch(function () { return null; })]).then(function (res) {
+      var pen = res[0], resu = res[1], ins = res[2];
       var lines = [];
       pen.d.querySelectorAll("table").forEach(function (t) {
         var head = t.rows[0]; if (!head) return;
@@ -194,22 +194,20 @@ function bookmarkletBody(appUrl, hashKey, metaPrefix) {
       });
       if (!lines.length) { alert("No se pudo leer tu lista de pendientes. ¿Tu sesión de UTESA sigue abierta?"); return; }
       var cur = 0;
-      if (cal) cal.d.querySelectorAll("table").forEach(function (t) {
+      if (ins) ins.d.querySelectorAll("table").forEach(function (t) {
         var head = t.rows[0]; if (!head) return;
         var cells = [].slice.call(head.cells).map(function (c) { return (c.textContent || "").replace(/\s+/g, " ").trim(); });
         var ci = cells.findIndex(function (c) { return /c[óo]d/i.test(c); });
-        var nf = cells.findIndex(function (c) { return /^NF$/i.test(c); });
-        if (ci === -1 || nf === -1) return;
+        if (ci === -1) return;
         [].slice.call(t.rows, 1).forEach(function (r) {
           var m = (r.cells[ci] && r.cells[ci].textContent || "").toUpperCase().match(/[A-Z]{2,4}-?\d{3}/);
-          var hasFinal = (r.cells[nf] && r.cells[nf].textContent || "").trim() !== "";
-          if (m && !hasFinal) { lines.push("C\t" + m[0]); cur++; }
+          if (m) { lines.push("C\t" + m[0]); cur++; }
         });
       });
       var v = function (d, id) { var e = d.getElementById(id); return e ? String(e.value || "").trim() : ""; };
       var meta = metaPrefix + "MODO=sync" +
         "|CARRERA=" + v(pen.d, "txtNombrecar") + "|PENSUM=" + v(pen.d, "txtPensum") +
-        "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens") + (cal ? "|CURSO=" + cur : "");
+        "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens") + (ins ? "|CURSO=" + cur : "");
       send(meta, lines);
     }).catch(function () { alert("No se pudo leer el portal. Recarga la página de UTESA e inténtalo de nuevo."); });
     return;

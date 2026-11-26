@@ -126,8 +126,8 @@ function parsePending(html) {
 }
 
 /**
- * Materias en curso de la página "Calificaciones": claves (sin sección) de las filas SIN nota final.
- * De las notas solo se mira si la columna NF está vacía; ningún valor sale de esta función.
+ * Materias en curso de la página "Asignaturas inscritas" (#, Cód. Asig., Nombre, CR, Horario, Aula):
+ * la clave de cada fila, sin la sección (INF-440-003 → INF-440). Esa página no tiene calificaciones.
  */
 function parseCurrent(html) {
   const out = [];
@@ -135,11 +135,10 @@ function parseCurrent(html) {
     const rows = rowsOf(t);
     if (!rows.length) continue;
     const ci = rows[0].findIndex(c => /c[óo]d/i.test(c));
-    const nf = rows[0].findIndex(c => /^NF$/i.test(c.trim()));
-    if (ci === -1 || nf === -1) continue;
+    if (ci === -1) continue;
     for (const r of rows.slice(1)) {
       const m = String(r[ci] || "").toUpperCase().match(/([A-Z]{2,4})[-\s]?(\d{3})/);
-      if (m && !String(r[nf] || "").trim()) { const c = `${m[1]}-${m[2]}`; if (!out.includes(c)) out.push(c); }
+      if (m) { const c = `${m[1]}-${m[2]}`; if (!out.includes(c)) out.push(c); }
     }
   }
   return out.slice(0, 40);
@@ -205,11 +204,12 @@ async function login(request, env) {
       counts = { aprob: n("txtCanAprob"), insc: n("txtCanInscri"), pend: n("txtCanPens") };
     } catch { /* los contadores son opcionales */ }
 
-    // materias en curso (página Calificaciones): opcional, si falla se vincula igual
+    // materias en curso (página Asignaturas inscritas): opcional, si falla se vincula igual.
+    // Sin tabla = no tiene inscritas este cuatrimestre (lista vacía), salvo que la página no cargara.
     let current = null;
     try {
-      const cal = await get(`${BASE}calificaciones.aspx`, jar);
-      if (cal.status === 200 && /C[óo]d\.?\s*Asig/i.test(textOf(cal.html))) current = parseCurrent(cal.html);
+      const ins = await get(`${BASE}asignaturas-inscritas.aspx`, jar);
+      if (ins.status === 200) current = parseCurrent(ins.html);
     } catch { /* opcional */ }
 
     // Logros: solo con inicio de sesión directo y sesión de Firebase válida

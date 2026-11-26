@@ -67,7 +67,5 @@ refresque. El cliente trata un fallo de aviso como no crítico y sigue por sonde
 
 ## Materias en curso (2026-11-26)
 
-* Para saber qué materias cursa alguien ahora, el marcador y el inicio de sesión directo abren la página *Calificaciones* del portal.
-  De esa tabla se toma **solo la clave** de cada materia y **si su nota final está vacía**. Ninguna calificación (parciales ni nota final)
-  sale del navegador ni del servidor, ni se guarda (`parseCurrent` en `app/_worker.js`; prueba en `tests/server.core.test.mjs`).
+* Para saber qué materias cursa alguien ahora, el marcador y el inicio de sesión directo abren *Asignaturas inscritas* del portal (`asignaturas-inscritas.aspx`). Esa tabla no tiene calificaciones; se toma **solo la clave** de cada materia (ni horario ni aula salen del navegador o del servidor; `parseCurrent` en `app/_worker.js`, prueba en `tests/server.core.test.mjs`).
 * Se guarda en `users.current` (lista de claves) y se borra al reiniciar la cuenta.
