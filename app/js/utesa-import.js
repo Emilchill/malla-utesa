@@ -208,7 +208,7 @@ function bookmarkletBody(appUrl, hashKey, metaPrefix) {
       var v = function (d, id) { var e = d.getElementById(id); return e ? String(e.value || "").trim() : ""; };
       var meta = metaPrefix + "MODO=sync" +
         "|CARRERA=" + v(pen.d, "txtNombrecar") + "|PENSUM=" + v(pen.d, "txtPensum") +
-        "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens") + (insOk ? "|CURSO=" + cur : "");
+        "|APROB=" + v(resu.d, "txtCanAprob") + "|INSC=" + v(resu.d, "txtCanInscri") + "|PEND=" + v(resu.d, "txtCanPens") + (insOk && cur ? "|CURSO=" + cur : "");
       send(meta, lines);
     }).catch(function () { alert("No se pudo leer el portal. Recarga la página de UTESA e inténtalo de nuevo."); });
     return;
@@ -281,7 +281,7 @@ function analyze(text) {
     <br><span class="muted">Revisa la lista antes de confirmar. Las que parecen reprobadas o en curso vienen desmarcadas.</span>${careerWarn}
     ${Array.isArray(res.current)
       ? `<br><span class="imp-cur">▶ En curso: <strong>${res.current.length}</strong> materia${res.current.length === 1 ? "" : "s"}${res.current.length ? ` (${esc(res.current.join(", "))})` : ""}. Se resaltarán en tu malla.</span>`
-      : lastFromBookmark ? `<br><span class="imp-warn">Tu marcador es de una versión anterior y no trae las materias en curso. Vuelve a guardarlo desde esta ventana.</span>` : ""}`;
+      : lastFromBookmark ? `<br><span class="imp-warn">No pudimos leer tus asignaturas inscritas, así que tus materias en curso no cambian. Si guardaste el marcador antes del 26 de noviembre, vuelve a guardarlo desde esta ventana; si no, puedes marcarlas a mano tocando cada materia.</span>` : ""}`;
 
   const ordered = [...nuevos, ...ya];
   list.innerHTML = ordered.map(f => {

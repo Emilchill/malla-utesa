@@ -205,15 +205,19 @@ async function login(request, env) {
     } catch { /* los contadores son opcionales */ }
 
     // materias en curso (página Asignaturas inscritas): opcional, si falla se vincula igual.
-    // Como en el navegador: primero el marco (pagina-asignaturas-inscritas.aspx, prepara la sesión) y luego la tabla.
-    // Si la tabla no llega, current = null (no se sabe) para no borrar lo que la persona marcó a mano.
+    // Se imita al navegador: el marco (pagina-asignaturas-inscritas.aspx) y lo que ese marco carga aparte
+    // (barra-verde.aspx y menu.aspx, que preparan la sesión) y por último la tabla.
+    // current = null significa «no se sabe»: así nunca se borran las materias que la persona marcó a mano.
     let current = null, currentStatus = "error";
     try {
-      await get(`${BASE}pagina-asignaturas-inscritas.aspx`, jar);
+      for (const p of ["pagina-asignaturas-inscritas.aspx", "barra-verde.aspx", "menu.aspx"]) { try { await get(`${BASE}${p}`, jar); } catch { /* preparación, no crítica */ } }
       const ins = await get(`${BASE}asignaturas-inscritas.aspx`, jar);
-      if (ins.status === 200 && /C[óo]d\.?\s*Asig/i.test(textOf(ins.html))) { current = parseCurrent(ins.html); currentStatus = "ok"; }
-      else if (ins.status === 200 && /no (tiene|posee|hay)[^<]{0,40}inscrit/i.test(textOf(ins.html))) { current = []; currentStatus = "ok"; } // sin inscritas este cuatrimestre
-      else currentStatus = "sin-tabla";
+      const txt = ins.status === 200 ? textOf(ins.html) : "";
+      if (/sesi[óo]n ha vencido/i.test(txt)) currentStatus = "sesion";
+      else if (/C[óo]d\.?\s*Asig/i.test(txt)) {
+        const found = parseCurrent(ins.html);
+        if (found.length) { current = found; currentStatus = "ok"; } else currentStatus = "vacia"; // tabla sin filas: no se toma como «0 materias»
+      } else currentStatus = "sin-tabla";
     } catch { /* opcional */ }
 
     // Logros: solo con inicio de sesión directo y sesión de Firebase válida

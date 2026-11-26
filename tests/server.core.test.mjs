@@ -12,10 +12,17 @@ ok("equipar sin verificar -> 403", r[0] === 403, r);
 r = await call("POST", "/api/utesa-login", tok("ana"), { matricula: "1000000", recinto: "UTSAN", password: "x" }, "2.2.2.2");
 ok("inicio directo: trae las materias inscritas como en curso (sin la sección)", r[0] === 200 && JSON.stringify(r[1].current) === JSON.stringify(["INF-440", "MAT-360"]), r[1].current);
 ok("inicio directo: no devuelve horarios ni aulas", !/Horario|Aula|L 8-10/.test(JSON.stringify(r[1])), r[1]);
+const rFirst = r;
 globalThis.__noInscritas = true;
 r = await call("POST", "/api/utesa-login", tok("ana"), { matricula: "1000000", recinto: "UTSAN", password: "x" }, "2.2.2.9");
 ok("inicio directo: si la tabla de inscritas no llega, responde «no se sabe» (no borra lo marcado a mano)", r[0] === 200 && r[1].current === null && r[1].currentStatus === "sin-tabla", { current: r[1].current, st: r[1].currentStatus });
+for (const [mode, st] of [["vacia", "vacia"], ["sesion", "sesion"]]) {
+  globalThis.__noInscritas = mode;
+  r = await call("POST", "/api/utesa-login", tok("zed"), { matricula: "3000000", recinto: "UTSAN", password: "x" }, "2.2.3." + mode.length);
+  ok(`inicio directo: tabla ${mode === "vacia" ? "vacía" : "con sesión vencida"} → «no se sabe», nunca «0 materias»`, r[0] === 200 && r[1].current === null && r[1].currentStatus === st, { current: r[1].current, st: r[1].currentStatus });
+}
 globalThis.__noInscritas = false;
+r = rFirst; // las pruebas de arriba usan su propio inicio de sesión; las de abajo revisan el primero
 ok("login directo verifica y da logros", r[0] === 200 && r[1].verified && r[1].verified.earned.includes("MAT-360") && r[1].verified.earned.includes("INF-164"), r);
 ok("no desbloquea lo pendiente", !r[1].verified.earned.includes("INF-502") && !r[1].verified.earned.includes("DPG-020"), r[1].verified && r[1].verified.earned);
 ok("no cuenta materias de DER para ISC", !r[1].verified.earned.some(c => c.startsWith("DER")), r[1].verified && r[1].verified.earned);
