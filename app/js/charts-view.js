@@ -211,10 +211,12 @@ function paceHtml(d, W) {
 /* ---------- 4. Proyección ---------- */
 function project(ctx, d, limit) {
   const { pensum, effSet } = ctx;
+  // lo que cursas ahora se da por aprobado al cerrar este cuatrimestre: no se vuelve a proponer
+  const cur = new Set([...(ctx.currentSet || [])].filter(c => !effSet.has(c)));
   const subjects = pensum.cuatrimestres.flatMap(c => c.materias).filter(m => m.c !== "ELECTIVA" && STD.test(m.c));
   const known = new Set(subjects.map(m => m.c));
-  const pending = subjects.filter(m => !effSet.has(m.c));
-  const sim = new Set(effSet);
+  const pending = subjects.filter(m => !effSet.has(m.c) && !cur.has(m.c));
+  const sim = new Set([...effSet, ...cur]);
 
   // "profundidad": cuántos cuatrimestres de cadena dependen de esta materia (las críticas van primero)
   const deps = new Map();
@@ -267,6 +269,8 @@ function projectionHtml(ctx, d) {
   const limit = cap == null || cap > maxCr ? maxCr : cap;
   const options = [...CAPS.filter(v => v != null && v < maxCr), maxCr];
   const { terms, stuck } = project(ctx, d, limit);
+  const curList = [...(ctx.currentSet || [])].filter(c => !ctx.effSet.has(c)).map(c => ctx.findSubject(c)).filter(Boolean);
+  const curCr = curList.reduce((s, m) => s + (m.cr || 0), 0);
   const n = terms.length;
   const years = n / 3;
   const capLabel = (v) => (v === maxCr ? `${v} CR · máximo de tu pensum` : `${v} CR`);
@@ -294,9 +298,10 @@ function projectionHtml(ctx, d) {
       </label>
     </div>
     <p class="ch-read">${head}</p>
+    ${curList.length ? `<p class="ch-note">▶ Las ${curList.length} materia${curList.length === 1 ? "" : "s"} que cursas ahora (${curCr} CR) se cuentan como aprobadas al terminar este cuatrimestre, así que no aparecen en «Siguiente».</p>` : ""}
     ${n ? `<div class="rd-scroll"><div class="rd-track">${cols}</div></div>` : ""}
     ${stuck.length ? `<p class="ch-note">⚠ ${stuck.length} materia${stuck.length === 1 ? "" : "s"} no se pudo${stuck.length === 1 ? "" : "n"} ubicar por requisitos que no se cumplen (${stuck.slice(0, 4).map(m => m.c).join(", ")}${stuck.length > 4 ? "…" : ""}).</p>` : ""}
-    <p class="ch-note">Estimación: ordena primero las materias que más cadena de requisitos desbloquean y no considera la oferta real de cada período ni los correquisitos. Incluye lo que cursas ahora como pendiente.</p>
+    <p class="ch-note">Estimación: ordena primero las materias que más cadena de requisitos desbloquean y no considera la oferta real de cada período ni los correquisitos. Supone que apruebas lo que cursas ahora.</p>
   </div>`;
 }
 

@@ -14,6 +14,7 @@ import { initUtesaImport } from "./utesa-import.js";
 import { initSettings } from "./settings.js";
 import { openModal, closeModal, initModals } from "./modal.js";
 import { revealApp, firstPaint, replayIn } from "./motion.js";
+import { askDialog } from "./dialog.js";
 
 /* Guarda campos del usuario en D1 (vía /api/user) */
 async function saveUser(fields) {
@@ -141,6 +142,30 @@ function boot() {
   safeInit(initVideo, "video tutorial");
   render(); // segundo pintado ya con la app visible: el mapa necesita medir tamaños reales (zoom y caminos)
   announceOnce();
+  safeInit(resyncNoticeOnce, "aviso de resincronizar");
+}
+
+/**
+ * Tras cada despliegue (cada commit a main) sugiere resincronizar con UTESA, una sola vez por versión.
+ * La versión sale del ?v=<commit> que el build pone en las URLs; solo para cuentas ya vinculadas.
+ */
+function resyncNoticeOnce() {
+  let ver = "";
+  try { ver = new URL(import.meta.url).searchParams.get("v") || ""; } catch { return; }
+  if (!/^[0-9A-Za-z]{6,40}$/.test(ver)) return;
+  const KEY = "malla_resync_seen_v";
+  try { if (localStorage.getItem(KEY) === ver) return; localStorage.setItem(KEY, ver); } catch { return; }
+  if (!isLinked()) return; // sin vincular no hay nada que resincronizar
+  setTimeout(async () => {
+    const ok = await askDialog({
+      icon: "info",
+      title: "Malla UTESA se actualizó",
+      text: "Publicamos cambios nuevos. Vuelve a sincronizar con UTESA para traer tus materias, las que estás cursando y tus logros con las mejoras más recientes.\n\nSolo verás este aviso una vez por actualización.",
+      confirm: "Resincronizar",
+      cancel: "Ahora no",
+    });
+    if (ok) document.getElementById("btn-utesa")?.click();
+  }, 2200);
 }
 
 /** Novedades: se muestran una sola vez por navegador. */
@@ -734,6 +759,7 @@ function renderChartsView() {
   renderCharts(cont, {
     pensum,
     effSet,
+    currentSet,
     prereqsOf: getPrereqCodes,
     isUnlocked: (m) => isUnlockedIn(m, effSet),
     findSubject,
